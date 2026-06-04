@@ -6,3 +6,35 @@ coverage/
 *.log
 .env*
 !.env.example
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+node_modules/
+
+# Production
+dist/
+dist-ssr/
+*.local
+
+# Environment variables
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories and files
+.vscode/
+!.vscode/extensions.json
+.vs/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# System or specific tool folders
+.antigravity/
