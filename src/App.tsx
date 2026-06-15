@@ -22,8 +22,12 @@ import StatisticsTab from './components/StatisticsTab';
 import AppraisalTab from './components/AppraisalTab';
 import SupervisionTab from './components/SupervisionTab';
 import LoginScreen from './components/LoginScreen';
+import AdministrativeTab from './components/AdministrativeTab';
+import AccountsTab from './components/AccountsTab';
+import FormDesignerTab from './components/FormDesignerTab';
+import IndicatorStatisticsTab from './components/IndicatorStatisticsTab';
 
-import { CriterionRow, ReportMeta, NotificationItem, ReportPeriod, FormReport, Criterion, UserSession, CommuneSubmission } from './types';
+import { CriterionRow, ReportMeta, NotificationItem, ReportPeriod, FormReport, Criterion, UserSession, CommuneSubmission, ProvinceSubmission } from './types';
 import {
   INITIAL_CRITERIA_ROWS,
   INITIAL_CRITERIA_ROWS_06,
@@ -35,7 +39,8 @@ import {
   INITIAL_DICTIONARY_CRITERIA,
   INITIAL_PERIODS,
   createDefaultFormsForPeriod,
-  DEFAULT_COMMUNES
+  DEFAULT_COMMUNES,
+  DEFAULT_PROVINCE_SUBMISSIONS
 } from './mockData';
 
 export default function App() {
@@ -43,7 +48,7 @@ export default function App() {
   const [userSession, setUserSession] = useState<UserSession | null>(null);
 
   // 2. Navigation states
-  const [currentTab, setCurrentTab] = useState<'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria'>('overview');
+  const [currentTab, setCurrentTab] = useState<'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics'>('overview');
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -78,6 +83,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [communes, setCommunes] = useState<CommuneSubmission[]>([]);
+  const [provinceSubmissions, setProvinceSubmissions] = useState<ProvinceSubmission[]>([]);
   const [activeCommuneId, setActiveCommuneId] = useState<string>('com-1');
 
   useEffect(() => {
@@ -85,6 +91,12 @@ export default function App() {
       localStorage.setItem('NTM_Communes', JSON.stringify(communes));
     }
   }, [communes]);
+
+  useEffect(() => {
+    if (provinceSubmissions.length > 0) {
+      localStorage.setItem('NTM_ProvinceSubmissions', JSON.stringify(provinceSubmissions));
+    }
+  }, [provinceSubmissions]);
 
   useEffect(() => {
     localStorage.setItem('NTM_ActiveCommuneId', activeCommuneId);
@@ -127,6 +139,19 @@ export default function App() {
     } else {
       setCommunes(DEFAULT_COMMUNES);
       localStorage.setItem('NTM_Communes', JSON.stringify(DEFAULT_COMMUNES));
+    }
+
+    // Provinces load
+    const savedProvinceSubs = localStorage.getItem('NTM_ProvinceSubmissions');
+    if (savedProvinceSubs) {
+      try {
+        setProvinceSubmissions(JSON.parse(savedProvinceSubs));
+      } catch (e) {
+        setProvinceSubmissions(DEFAULT_PROVINCE_SUBMISSIONS);
+      }
+    } else {
+      setProvinceSubmissions(DEFAULT_PROVINCE_SUBMISSIONS);
+      localStorage.setItem('NTM_ProvinceSubmissions', JSON.stringify(DEFAULT_PROVINCE_SUBMISSIONS));
     }
 
     // Active Commune load
@@ -580,6 +605,9 @@ export default function App() {
                   setCommunes={setCommunes}
                   activeCommuneId={activeCommuneId}
                   setActiveCommuneId={setActiveCommuneId}
+                  provinceSubmissions={provinceSubmissions}
+                  setProvinceSubmissions={setProvinceSubmissions}
+                  onAddNotification={addSystemNotification}
                 />
               )}
 
@@ -617,6 +645,34 @@ export default function App() {
 
               {currentTab === 'supervision' && (
                 <SupervisionTab />
+              )}
+
+              {currentTab === 'admin_units' && (
+                <AdministrativeTab 
+                  userSession={userSession} 
+                  communes={communes} 
+                  setCommunes={setCommunes} 
+                />
+              )}
+
+              {currentTab === 'accounts' && (
+                <AccountsTab 
+                  userSession={userSession} 
+                  onUpdateSession={handleUpdateSession} 
+                />
+              )}
+
+              {currentTab === 'form_designer' && (
+                <FormDesignerTab 
+                  userSession={userSession} 
+                />
+              )}
+
+              {currentTab === 'indicator_statistics' && (
+                <IndicatorStatisticsTab 
+                  userSession={userSession} 
+                  communes={communes} 
+                />
               )}
             </>
           )}

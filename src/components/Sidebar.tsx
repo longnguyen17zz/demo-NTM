@@ -8,13 +8,17 @@ import {
   HelpCircle,
   LogOut,
   Sparkles,
-  X
+  X,
+  MapPin,
+  Users,
+  FileEdit,
+  BarChart3
 } from 'lucide-react';
 import { UserSession } from '../types';
 
 interface SidebarProps {
-  currentTab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria';
-  onTabChange: (tab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria') => void;
+  currentTab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics';
+  onTabChange: (tab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics') => void;
   onNewReportClick: () => void;
   isSidebarOpen?: boolean;
   onClose?: () => void;
@@ -32,13 +36,7 @@ export default function Sidebar({
   userSession,
 }: SidebarProps) {
 
-  // Custom mapping of items from screenshot:
-  // 1. Dashboard
-  // 2. Thẩm định hồ sơ
-  // 3. Giám sát quy trình
-  // 4. Cấu hình hệ thống
-  // 5. Danh mục tiêu chí
-  // 6. Đợt báo cáo
+  // Custom mapping of items
   const menuItems = [
     {
       id: 'overview' as const,
@@ -71,27 +69,53 @@ export default function Sidebar({
       targetTab: 'appraisal' as const
     },
     {
-      id: 'reports_supervision' as const,
-      label: 'Tổng hợp báo cáo',
-      icon: TrendingUp,
-      // targetTab: 'supervision' as const
+      id: 'form_designer' as const,
+      label: 'Thiết kế Bảng Biểu mẫu',
+      icon: FileEdit,
+      targetTab: 'form_designer' as const
     },
-    // { 
-    //   id: 'supervision' as const, 
-    //   label: 'Giám sát quy trình', 
-    //   icon: TrendingUp,
-    //   targetTab: 'supervision' as const 
-    // },
+    {
+      id: 'indicator_statistics' as const,
+      label: 'Thống kê Bộ Chỉ số',
+      icon: BarChart3,
+      targetTab: 'indicator_statistics' as const
+    },
+    {
+      id: 'accounts' as const,
+      label: 'Tài khoản & Phân quyền',
+      icon: Users,
+      targetTab: 'accounts' as const
+    },
+    {
+      id: 'admin_units' as const,
+      label: 'Quản lý Đơn vị Hành chính',
+      icon: MapPin,
+      targetTab: 'admin_units' as const
+    },
     {
       id: 'config' as const,
       label: 'Cấu hình hệ thống',
       icon: Settings,
       targetTab: 'overview' as const
-    },
+    }
   ];
 
   const filteredMenuItems = menuItems.filter((item) => {
     const role = userSession.role;
+    const perms = userSession.permissions || [];
+
+    // Admin tabs
+    if (item.id === 'admin_units') {
+      return role === 'SUPERVISOR' || perms.includes('manage_units');
+    }
+    if (item.id === 'accounts') {
+      return role === 'SUPERVISOR' || perms.includes('manage_users');
+    }
+    if (item.id === 'form_designer') {
+      return role === 'SUPERVISOR' || perms.includes('design_forms');
+    }
+
+    // Standard tabs
     if (role === 'SUPERVISOR') {
       return true;
     }
@@ -105,9 +129,6 @@ export default function Sidebar({
   });
 
   const handleItemClick = (item: typeof filteredMenuItems[0]) => {
-    if (item.id === 'config') {
-      alert('Đang mở mô-đun Cấu hình phân quyền hệ thống hằng năm...');
-    }
     if (item.targetTab) {
       onTabChange(item.targetTab);
     }
@@ -158,10 +179,13 @@ export default function Sidebar({
             let isActive = false;
             if (item.id === 'overview' && currentTab === 'overview') isActive = true;
             else if (item.id === 'reports_appraisal' && currentTab === 'appraisal') isActive = true;
-            else if (item.id === 'reports_supervision' && currentTab === 'supervision') isActive = true;
             else if (item.id === 'criteria' && currentTab === 'criteria') isActive = true;
             else if (item.id === 'category_criteria' && currentTab === 'category_criteria') isActive = true;
             else if (item.id === 'periods' && currentTab === 'reports') isActive = true;
+            else if (item.id === 'admin_units' && currentTab === 'admin_units') isActive = true;
+            else if (item.id === 'accounts' && currentTab === 'accounts') isActive = true;
+            else if (item.id === 'form_designer' && currentTab === 'form_designer') isActive = true;
+            else if (item.id === 'indicator_statistics' && currentTab === 'indicator_statistics') isActive = true;
 
             return (
               <button

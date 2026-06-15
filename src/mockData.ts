@@ -1,4 +1,4 @@
-import { CriterionRow, ReportMeta, NotificationItem, ResourceInvestRow, CommuneSubmission } from './types';
+import { CriterionRow, ReportMeta, NotificationItem, ResourceInvestRow, CommuneSubmission, ProvinceSubmission } from './types';
 
 export const INITIAL_CRITERIA_ROWS: CriterionRow[] = [
   {
@@ -1252,5 +1252,49 @@ export const DEFAULT_COMMUNES: CommuneSubmission[] = [
     group: 'III'
   }
 ];
+
+export const DEFAULT_PROVINCE_SUBMISSIONS: ProvinceSubmission[] = [
+  {
+    id: 'prov-1',
+    name: 'Tỉnh Đông',
+    code: 'VN-TD',
+    submitted: 6,
+    total: 6,
+    status: 'APPROVED',
+    updatedAt: '10/05/2026',
+    region: 'Đông Bắc Bộ'
+  },
+  {
+    id: 'prov-2',
+    name: 'Tỉnh Thái Thụy',
+    code: 'VN-TT',
+    submitted: 6,
+    total: 6,
+    status: 'SUBMITTED',
+    updatedAt: '12/05/2026',
+    region: 'Đồng bằng sông Hồng'
+  },
+  {
+    id: 'prov-3',
+    name: 'Tỉnh Bắc',
+    code: 'VN-TB',
+    submitted: 2,
+    total: 6,
+    status: 'REVISION',
+    updatedAt: '14/05/2026',
+    region: 'Tây Bắc Bộ'
+  },
+  {
+    id: 'prov-4',
+    name: 'Tỉnh Nam',
+    code: 'VN-TN',
+    submitted: 0,
+    total: 6,
+    status: 'PENDING',
+    updatedAt: '--',
+    region: 'Đồng bằng sông Hồng'
+  }
+];
+
 
 

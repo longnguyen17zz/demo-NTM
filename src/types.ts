@@ -74,7 +74,7 @@ export interface NotificationItem {
 }
 
 export interface SidebarMenuItem {
-  id: 'overview' | 'reports' | 'criteria' | 'statistics' | 'evaluation' | 'supervision';
+  id: 'overview' | 'reports' | 'criteria' | 'statistics' | 'evaluation' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics';
   label: string;
   icon: string;
 }
@@ -136,6 +136,7 @@ export interface UserSession {
   username: string;
   fullName: string;
   role: 'EDITOR' | 'APPRAISER' | 'SUPERVISOR';
+  permissions?: string[];
 }
 
 export interface CommuneSubmission {
@@ -148,6 +149,64 @@ export interface CommuneSubmission {
   status: 'APPROVED' | 'SUBMITTED' | 'REVISION' | 'PENDING';
   updatedAt: string;
   group?: 'I' | 'II' | 'III';
+}
+
+export interface ProvinceSubmission {
+  id: string;
+  name: string;
+  code: string;
+  submitted: number;
+  total: number;
+  status: 'APPROVED' | 'SUBMITTED' | 'REVISION' | 'PENDING';
+  updatedAt: string;
+  region: string;
+}
+
+export interface ProvinceItem {
+  code: string;
+  name: string;
+}
+
+export interface AccountItem {
+  id: string;
+  username: string;
+  fullName: string;
+  role: 'EDITOR' | 'APPRAISER' | 'SUPERVISOR';
+  department: string;
+  permissions: string[];
+}
+
+export interface FormColumn {
+  id: string;
+  label: string;
+  type: 'text' | 'number' | 'boolean';
+  width?: number;
+}
+
+export interface FormRowConfig {
+  id: number;
+  tt?: string;
+  category: string;
+  unit: string;
+  defaultNote?: string;
+}
+
+export interface FormTemplate {
+  id: string;
+  code: string;
+  title: string;
+  columns: FormColumn[];
+  rows: FormRowConfig[];
+  description?: string;
+}
+
+export interface IndicatorConfig {
+  id: string;
+  name: string;
+  formula: string;
+  unit: string;
+  description: string;
+  category: string;
 }
 
 

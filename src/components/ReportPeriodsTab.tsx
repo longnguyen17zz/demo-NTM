@@ -23,10 +23,12 @@ import {
   ArrowLeft,
   Activity,
   UserCheck,
-  ShieldAlert
+  ShieldAlert,
+  Edit2,
+  Trash2
 } from 'lucide-react';
-import { ReportPeriod, UserSession, FormReport, CommuneSubmission } from '../types';
-import { createDefaultFormsForPeriod } from '../mockData';
+import { ReportPeriod, UserSession, FormReport, CommuneSubmission, ProvinceSubmission } from '../types';
+import { createDefaultFormsForPeriod, FORM_METAS } from '../mockData';
 
 interface ReportPeriodsTabProps {
   periods: ReportPeriod[];
@@ -41,6 +43,9 @@ interface ReportPeriodsTabProps {
   setCommunes: React.Dispatch<React.SetStateAction<CommuneSubmission[]>>;
   activeCommuneId: string;
   setActiveCommuneId: (id: string) => void;
+  provinceSubmissions: ProvinceSubmission[];
+  setProvinceSubmissions: React.Dispatch<React.SetStateAction<ProvinceSubmission[]>>;
+  onAddNotification?: (content: string, type: 'info' | 'warning' | 'success' | 'alert') => void;
 }
 
 export default function ReportPeriodsTab({
@@ -56,6 +61,9 @@ export default function ReportPeriodsTab({
   setCommunes,
   activeCommuneId,
   setActiveCommuneId,
+  provinceSubmissions,
+  setProvinceSubmissions,
+  onAddNotification,
 }: ReportPeriodsTabProps) {
   // Navigation: state to track selected period ID to see sub-forms (Biểu 04-13)
   const [localPeriodId, setLocalPeriodId] = useState<string | null>(null);
@@ -83,6 +91,7 @@ export default function ReportPeriodsTab({
   const [pTerm, setPTerm] = useState('6 tháng đầu năm');
   const [pDeadline, setPDeadline] = useState('2024-06-30');
   const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
+  const [selectedFormCodes, setSelectedFormCodes] = useState<string[]>([]);
 
   // Interactive popup variables
   const [selectedCommuneDetails, setSelectedCommuneDetails] = useState<CommuneSubmission | null>(null);
@@ -138,6 +147,23 @@ export default function ReportPeriodsTab({
     };
 
     onEditPeriod(updatedPeriod);
+
+    if (isCommune) {
+      setCommunes(prev => prev.map(c => c.id === activeCommuneId ? {
+        ...c,
+        submitted: 4,
+        status: 'SUBMITTED',
+        updatedAt: new Date().toLocaleDateString('vi-VN')
+      } : c));
+    } else if (isProvince) {
+      setProvinceSubmissions(prev => prev.map(p => p.name === 'Tỉnh Đông' ? {
+        ...p,
+        submitted: 6,
+        status: 'SUBMITTED',
+        updatedAt: new Date().toLocaleDateString('vi-VN')
+      } : p));
+    }
+
     triggerToast(
       isCommune
         ? "Đã nộp toàn bộ hồ sơ báo cáo cấp Xã lên Hội đồng thẩm định Tỉnh thành công!"
@@ -183,21 +209,83 @@ export default function ReportPeriodsTab({
     triggerToast(`Đã khởi tạo thành công ${newCommune.name} thuộc ${newCommune.province}!`, 'success');
   };
 
-  // Filtered Communes
+  // Selected period for monitoring in the table
+  const [monitoredPeriodId, setMonitoredPeriodId] = useState<string>(periods[0]?.id || '2024-q4');
+
+  // Overdue check logic
+  const simulatedToday = new Date('2026-06-15');
+  const monitoredPeriod = periods.find(p => p.id === monitoredPeriodId) || periods[0];
+  const isPeriodOverdue = monitoredPeriod ? (simulatedToday > new Date(monitoredPeriod.deadline)) : false;
+
+  // Filtered Communes (Province monitors Commune)
   const filteredCommunes = communes.filter((item) => {
     const matchesProvince = selectedProvince === 'all' || item.province === selectedProvince;
-    const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus;
+    let matchesStatus = false;
+    if (selectedStatus === 'all') {
+      matchesStatus = true;
+    } else if (selectedStatus === 'OVERDUE') {
+      matchesStatus = isPeriodOverdue && item.status !== 'APPROVED';
+    } else {
+      matchesStatus = item.status === selectedStatus;
+    }
     return matchesProvince && matchesStatus;
   });
 
-  // Commune Pagination indices
-  const totalCommunePages = Math.ceil(filteredCommunes.length / itemsPerPageTable) || 1;
-  const tableStartIndex = (tablePage - 1) * itemsPerPageTable;
-  const paginatedCommunes = filteredCommunes.slice(tableStartIndex, tableStartIndex + itemsPerPageTable);
+  // Filtered Provinces (Ministry monitors Province)
+  const filteredProvinces = provinceSubmissions.filter((item) => {
+    const matchesRegion = selectedProvince === 'all' || item.region === selectedProvince;
+    let matchesStatus = false;
+    if (selectedStatus === 'all') {
+      matchesStatus = true;
+    } else if (selectedStatus === 'OVERDUE') {
+      matchesStatus = isPeriodOverdue && item.status !== 'APPROVED';
+    } else {
+      matchesStatus = item.status === selectedStatus;
+    }
+    return matchesRegion && matchesStatus;
+  });
 
-  const handleCommunePageSelect = (page: number) => {
-    if (page >= 1 && page <= totalCommunePages) {
+  const isSupervisor = userSession.role === 'SUPERVISOR';
+  const tableDataList = isSupervisor ? filteredProvinces : filteredCommunes;
+
+  // Pagination indices
+  const totalTablePages = Math.ceil(tableDataList.length / itemsPerPageTable) || 1;
+  const tableStartIndex = (tablePage - 1) * itemsPerPageTable;
+  const paginatedTableData = tableDataList.slice(tableStartIndex, tableStartIndex + itemsPerPageTable);
+
+  const handleTablePageSelect = (page: number) => {
+    if (page >= 1 && page <= totalTablePages) {
       setTablePage(page);
+    }
+  };
+
+  const handleSendIndividualReminder = (unitName: string, isOverdueUnit: boolean) => {
+    const periodName = monitoredPeriod?.name || "đợt báo cáo";
+    if (isOverdueUnit) {
+      triggerToast(`Đã gửi công văn đôn đốc hoàn thành báo cáo khẩn tới ${unitName}!`, 'success');
+      if (onAddNotification) {
+        onAddNotification(`[ĐÔN ĐỐC] Gửi yêu cầu đôn đốc nộp số liệu khẩn tới đơn vị: ${unitName} (Báo cáo đợt: ${periodName})`, 'alert');
+      }
+    } else {
+      triggerToast(`Đã gửi thông báo nhắc nhở nộp số liệu tới ${unitName}!`, 'success');
+      if (onAddNotification) {
+        onAddNotification(`[NHẮC NHỞ] Đã gửi thông báo nhắc nhở nộp báo cáo tới đơn vị: ${unitName} (Báo cáo đợt: ${periodName})`, 'info');
+      }
+    }
+  };
+
+  const handleSendBatchReminder = () => {
+    const overdueUnits = tableDataList.filter(u => isPeriodOverdue && u.status !== 'APPROVED');
+    if (overdueUnits.length === 0) {
+      triggerToast("Không có đơn vị nào trễ hạn báo cáo trong đợt này!", "info");
+      return;
+    }
+
+    triggerToast(`Đã gửi thông báo nhắc nhở khẩn tới ${overdueUnits.length} đơn vị trễ hạn!`, 'success');
+    if (onAddNotification) {
+      const periodName = monitoredPeriod?.name || "đợt báo cáo";
+      const unitNamesStr = overdueUnits.map(u => u.name).join(', ');
+      onAddNotification(`[ĐÔN ĐỐC KHẨN] Hệ thống đã tự động gửi email và văn bản đôn đốc nộp số liệu tới ${overdueUnits.length} đơn vị trễ hạn (${unitNamesStr}) thuộc đợt: ${periodName}`, 'alert');
     }
   };
 
@@ -212,6 +300,17 @@ export default function ReportPeriodsTab({
       ? ['Tỉnh Đông', 'Tỉnh Thái Thụy', 'Tỉnh Bắc', 'Tỉnh Nam']
       : ['Xã Bình Minh', 'Xã Thụy Xuân', 'Xã Vũ Hội', 'Xã Quang Trung', 'Xã Hồng Phong', 'Xã Tiến Đức', 'Xã An Phú'];
     setSelectedTargets(initialTargets);
+
+    // Seed default & custom forms list
+    const customTemplatesJson = localStorage.getItem('NTM_FormTemplates');
+    let customTemplates: any[] = [];
+    if (customTemplatesJson) {
+      try { customTemplates = JSON.parse(customTemplatesJson); } catch (e) { }
+    }
+    const defaultCodes = FORM_METAS.map(f => f.code);
+    const customCodes = customTemplates.map(f => f.code);
+    setSelectedFormCodes([...defaultCodes, ...customCodes]);
+
     setShowAddModal(true);
   };
 
@@ -220,14 +319,61 @@ export default function ReportPeriodsTab({
     e.preventDefault();
     if (!pName.trim()) return;
 
+    if (selectedFormCodes.length === 0) {
+      alert('Vui lòng chọn ít nhất một biểu mẫu để áp dụng!');
+      return;
+    }
+
     const id = `period-${Date.now()}`;
+
+    // Generate filtered default forms list
+    const defaultForms = createDefaultFormsForPeriod(id);
+
+    // Find custom templates to construct if selected
+    const customTemplatesJson = localStorage.getItem('NTM_FormTemplates');
+    let customTemplates: any[] = [];
+    if (customTemplatesJson) {
+      try { customTemplates = JSON.parse(customTemplatesJson); } catch (e) { }
+    }
+
+    const forms: FormReport[] = [];
+    selectedFormCodes.forEach(code => {
+      const defForm = defaultForms.find(f => f.code === code);
+      if (defForm) {
+        forms.push(defForm);
+      } else {
+        const custTmpl = customTemplates.find(t => t.code === code);
+        if (custTmpl) {
+          forms.push({
+            id: `${id}-${custTmpl.code.toLowerCase().replace(' ', '')}`,
+            code: custTmpl.code,
+            title: custTmpl.title,
+            status: 'DRAFT',
+            updatedAt: new Date().toISOString(),
+            editor: '',
+            proofFiles: [],
+            data: custTmpl.rows.map((r: any) => ({
+              id: r.id,
+              tt: r.tt,
+              category: r.category,
+              unit: r.unit,
+              group1: { prevYear: 0, currentS1: 0, planS2: 0 },
+              group2: { prevYear: 0, currentS1: 0, planS2: 0 },
+              group3: { prevYear: 0, currentS1: 0, planS2: 0 },
+              note: r.defaultNote || ''
+            }))
+          });
+        }
+      }
+    });
+
     const newPeriod: ReportPeriod = {
       id,
       name: pName,
       year: pYear,
       term: pTerm,
       deadline: pDeadline,
-      forms: createDefaultFormsForPeriod(id),
+      forms,
       type: userSession.role === 'SUPERVISOR' ? 'PROVINCE' : 'COMMUNE',
       targets: selectedTargets,
     };
@@ -248,6 +394,8 @@ export default function ReportPeriodsTab({
     setPYear(period.year);
     setPTerm(period.term);
     setPDeadline(period.deadline);
+    setSelectedTargets(period.targets || []);
+    setSelectedFormCodes(period.forms.map(f => f.code) || []);
     setShowEditModal(true);
   };
 
@@ -255,12 +403,66 @@ export default function ReportPeriodsTab({
     e.preventDefault();
     if (!activePeriod || !pName.trim()) return;
 
+    if (selectedFormCodes.length === 0) {
+      alert('Vui lòng chọn ít nhất một biểu mẫu để áp dụng!');
+      return;
+    }
+
+    // Generate filtered default forms list
+    const defaultForms = createDefaultFormsForPeriod(activePeriod.id);
+
+    // Find custom templates to construct if selected
+    const customTemplatesJson = localStorage.getItem('NTM_FormTemplates');
+    let customTemplates: any[] = [];
+    if (customTemplatesJson) {
+      try { customTemplates = JSON.parse(customTemplatesJson); } catch (e) { }
+    }
+
+    const updatedForms: FormReport[] = [];
+    selectedFormCodes.forEach(code => {
+      // Keep existing form report if already exists to preserve user input data!
+      const existingForm = activePeriod.forms.find(f => f.code === code);
+      if (existingForm) {
+        updatedForms.push(existingForm);
+      } else {
+        const defForm = defaultForms.find(f => f.code === code);
+        if (defForm) {
+          updatedForms.push(defForm);
+        } else {
+          const custTmpl = customTemplates.find(t => t.code === code);
+          if (custTmpl) {
+            updatedForms.push({
+              id: `${activePeriod.id}-${custTmpl.code.toLowerCase().replace(' ', '')}`,
+              code: custTmpl.code,
+              title: custTmpl.title,
+              status: 'DRAFT',
+              updatedAt: new Date().toISOString(),
+              editor: '',
+              proofFiles: [],
+              data: custTmpl.rows.map((r: any) => ({
+                id: r.id,
+                tt: r.tt,
+                category: r.category,
+                unit: r.unit,
+                group1: { prevYear: 0, currentS1: 0, planS2: 0 },
+                group2: { prevYear: 0, currentS1: 0, planS2: 0 },
+                group3: { prevYear: 0, currentS1: 0, planS2: 0 },
+                note: r.defaultNote || ''
+              }))
+            });
+          }
+        }
+      }
+    });
+
     const updated: ReportPeriod = {
       ...activePeriod,
       name: pName,
       year: pYear,
       term: pTerm,
       deadline: pDeadline,
+      targets: selectedTargets,
+      forms: updatedForms
     };
 
     onEditPeriod(updated);
@@ -280,19 +482,23 @@ export default function ReportPeriodsTab({
     }
   };
 
-  // Export current township data list to simulated CSV
-  const handleExportCommuneReportingList = () => {
+  // Export current reporting data list to simulated JSON
+  const handleExportReportingList = () => {
     try {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(communes, null, 2));
+      const exportData = isSupervisor ? provinceSubmissions : communes;
+      const filename = isSupervisor
+        ? `TrangThaiNopBaoCao_Provinces_${new Date().getFullYear()}.json`
+        : `TrangThaiNopBaoCao_Communes_${new Date().getFullYear()}.json`;
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `TrangThaiNopBaoCao_Communes_${new Date().getFullYear()}.json`);
+      downloadAnchor.setAttribute("download", filename);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
       triggerToast("Xuất tệp thống kê tổng hợp trạng thái nộp số liệu thành công!", "success");
     } catch (e) {
-      triggerToast("Lỗi khi kết xuất Excel, vui lòng thử lại sau.", "info");
+      triggerToast("Lỗi khi kết xuất dữ liệu, vui lòng thử lại sau.", "info");
     }
   };
 
@@ -541,12 +747,34 @@ export default function ReportPeriodsTab({
                     <div>
                       {/* Top label area */}
                       <div className="flex justify-between items-start gap-3">
-                        <h4 className="text-sm font-black text-[#0f2942] leading-snug tracking-tight max-w-[80%]">
-                          {p.name}
-                        </h4>
-                        <span className={`text-xs font-black uppercase px-2 py-1 rounded border tracking-wider shrink-0 ${tagColor}`}>
-                          {tagText}
-                        </span>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-black text-[#0f2942] leading-snug tracking-tight truncate" title={p.name}>
+                            {p.name}
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {userSession.role !== 'EDITOR' && (
+                            <div className="flex items-center gap-1 mr-1">
+                              <button
+                                onClick={(e) => handleOpenEdit(p, e)}
+                                className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                title="Sửa đợt báo cáo"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDelete(p.id, p.name, e)}
+                                className="p-1 hover:bg-rose-50 rounded text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                title="Xóa đợt báo cáo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                          <span className={`text-xs font-black uppercase px-2 py-1 rounded border tracking-wider shrink-0 ${tagColor}`}>
+                            {tagText}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Detail range description */}
@@ -602,39 +830,72 @@ export default function ReportPeriodsTab({
           </div>
 
           {/* 4. Table "Thống kê trạng thái nộp báo cáo" */}
-          {userSession.role !== 'EDITOR' &&
+          {userSession.role !== 'EDITOR' && (
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
 
               {/* Header layout of the table status block */}
               <div className="p-5 border-b border-slate-110 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-sm font-black text-[#0f2942] tracking-tight uppercase">
-                    Thống kê trạng thái nộp báo cáo
+                    {isSupervisor ? "Thống kê trạng thái nộp báo cáo cấp Tỉnh" : "Thống kê trạng thái nộp báo cáo cấp Xã"}
                   </h3>
                   <p className="text-xs text-[#64748b] font-medium mt-0.5">
-                    Chi tiết tình hình thực hiện theo từng Huyện/Thành phố.
+                    {isSupervisor ? "Chi tiết tình hình thực hiện theo từng Tỉnh gửi lên Bộ." : "Chi tiết tình hình thực hiện theo từng Huyện/Thành phố."}
                   </p>
                 </div>
 
                 {/* Geo filter select dropdowns and Excel exports */}
                 <div className="flex flex-wrap items-center gap-2">
 
-                  {/* Geographics pin Filter dropdown */}
+                  {/* Dropdown chọn Đợt báo cáo để kiểm soát */}
                   <div className="relative">
                     <select
-                      value={selectedProvince}
+                      value={monitoredPeriodId}
                       onChange={(e) => {
-                        setSelectedProvince(e.target.value);
+                        setMonitoredPeriodId(e.target.value);
                         setTablePage(1);
                       }}
                       className="pl-8 pr-7 py-2 bg-[#f8fafc] border border-slate-200 hover:border-slate-300 focus:border-[#2563eb] rounded-lg text-xs font-bold text-slate-700 outline-none transition-all appearance-none cursor-pointer"
                     >
-                      <option value="all">Tất cả Tỉnh/TP</option>
-                      <option value="Tỉnh Đông">Tỉnh Đông</option>
-                      <option value="Tỉnh Thái Thụy">Tỉnh Thái Thụy</option>
-                      <option value="Tỉnh Bắc">Tỉnh Bắc</option>
-                      <option value="Tỉnh Nam">Tỉnh Nam</option>
+                      {periods.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
                     </select>
+                    <Calendar className="w-3.8 h-3.8 text-[#64748b] absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  </div>
+
+                  {/* Geographics pin Filter dropdown */}
+                  <div className="relative">
+                    {isSupervisor ? (
+                      <select
+                        value={selectedProvince}
+                        onChange={(e) => {
+                          setSelectedProvince(e.target.value);
+                          setTablePage(1);
+                        }}
+                        className="pl-8 pr-7 py-2 bg-[#f8fafc] border border-slate-200 hover:border-slate-300 focus:border-[#2563eb] rounded-lg text-xs font-bold text-slate-700 outline-none transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="all">Tất cả Vùng miền</option>
+                        <option value="Đông Bắc Bộ">Đông Bắc Bộ</option>
+                        <option value="Tây Bắc Bộ">Tây Bắc Bộ</option>
+                        <option value="Đồng bằng sông Hồng">Đồng bằng sông Hồng</option>
+                      </select>
+                    ) : (
+                      <select
+                        value={selectedProvince}
+                        onChange={(e) => {
+                          setSelectedProvince(e.target.value);
+                          setTablePage(1);
+                        }}
+                        className="pl-8 pr-7 py-2 bg-[#f8fafc] border border-slate-200 hover:border-slate-300 focus:border-[#2563eb] rounded-lg text-xs font-bold text-slate-700 outline-none transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="all">Tất cả Tỉnh/TP</option>
+                        <option value="Tỉnh Đông">Tỉnh Đông</option>
+                        <option value="Tỉnh Thái Thụy">Tỉnh Thái Thụy</option>
+                        <option value="Tỉnh Bắc">Tỉnh Bắc</option>
+                        <option value="Tỉnh Nam">Tỉnh Nam</option>
+                      </select>
+                    )}
                     <MapPin className="w-3.8 h-3.8 text-[#64748b] absolute left-2.5 top-1/2 -translate-y-1/2" />
                   </div>
 
@@ -649,18 +910,30 @@ export default function ReportPeriodsTab({
                       className="pl-8 pr-7 py-2 bg-[#f8fafc] border border-slate-200 hover:border-slate-300 focus:border-[#2563eb] rounded-lg text-xs font-bold text-slate-700 outline-none transition-all appearance-none cursor-pointer"
                     >
                       <option value="all">Tất cả trạng thái</option>
-                      <option value="APPROVED">Đã thẩm định</option>
-                      <option value="SUBMITTED">Chờ thẩm định</option>
+                      <option value="APPROVED">Đã phê duyệt</option>
+                      <option value="SUBMITTED">Chờ phê duyệt</option>
                       <option value="REVISION">Yêu cầu sửa</option>
                       <option value="PENDING">Chưa bắt đầu</option>
+                      <option value="OVERDUE">Trễ hạn nộp</option>
                     </select>
                     <SlidersHorizontal className="w-3.5 h-3.5 text-[#64748b] absolute left-2.5 top-1/2 -translate-y-1/2" />
                   </div>
 
+                  {/* Nút Đôn đốc trễ hạn hàng loạt */}
+                  <button
+                    type="button"
+                    onClick={handleSendBatchReminder}
+                    className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-extrabold rounded-lg flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                    title="Gửi đôn đốc khẩn cấp tới các đơn vị đang trễ hạn báo cáo"
+                  >
+                    <Send className="w-3.5 h-3.5 text-white" />
+                    <span>Đôn đốc trễ hạn</span>
+                  </button>
+
                   {/* Download backup Button */}
                   <button
                     type="button"
-                    onClick={handleExportCommuneReportingList}
+                    onClick={handleExportReportingList}
                     className="p-2 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-[#64748b] rounded-lg cursor-pointer shadow-sm transition-colors animate-spin-hover"
                     title="Tải về bản dữ liệu thống kê"
                   >
@@ -686,25 +959,37 @@ export default function ReportPeriodsTab({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-[#f8fafc] text-xs font-black text-[#475569] uppercase border-b border-slate-200 tracking-wider">
-                      <th className="py-3 px-6 w-[25%]">Tên Đơn vị (Xã/Tỉnh)</th>
-                      <th className="py-3 px-4 w-[17%] text-center">Tỉnh trực thuộc</th>
-                      <th className="py-3 px-4 w-[18%] text-center">Phân nhóm Xã</th>
-                      <th className="py-3 px-4 w-[18%] text-center">Báo cáo đã gửi</th>
-                      <th className="py-3 px-4 w-[14%] text-center">Trạng thái báo cáo</th>
-                      <th className="py-3 px-4 w-[8%] text-center">Thao tác</th>
-                    </tr>
+                    {isSupervisor ? (
+                      <tr className="bg-[#f8fafc] text-xs font-black text-[#475569] uppercase border-b border-slate-200 tracking-wider">
+                        <th className="py-3 px-6 w-[30%]">Tên Đơn vị (Tỉnh)</th>
+                        <th className="py-3 px-4 w-[25%] text-center">Vùng địa lý</th>
+                        <th className="py-3 px-4 w-[20%] text-center">Báo cáo đã gửi</th>
+                        <th className="py-3 px-4 w-[17%] text-center">Trạng thái báo cáo</th>
+                        <th className="py-3 px-4 w-[8%] text-center">Thao tác</th>
+                      </tr>
+                    ) : (
+                      <tr className="bg-[#f8fafc] text-xs font-black text-[#475569] uppercase border-b border-slate-200 tracking-wider">
+                        <th className="py-3 px-6 w-[25%]">Tên Đơn vị (Xã)</th>
+                        <th className="py-3 px-4 w-[17%] text-center">Tỉnh trực thuộc</th>
+                        <th className="py-3 px-4 w-[18%] text-center">Phân nhóm Xã</th>
+                        <th className="py-3 px-4 w-[18%] text-center">Báo cáo đã gửi</th>
+                        <th className="py-3 px-4 w-[14%] text-center">Trạng thái báo cáo</th>
+                        <th className="py-3 px-4 w-[8%] text-center">Thao tác</th>
+                      </tr>
+                    )}
                   </thead>
 
                   <tbody className="divide-y divide-slate-100 text-[#0f2942]">
-                    {paginatedCommunes.length === 0 ? (
+                    {paginatedTableData.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-slate-400 font-bold italic">
+                        <td colSpan={isSupervisor ? 5 : 6} className="py-12 text-center text-slate-400 font-bold italic">
                           Không có đơn vị nào khớp với bộ lọc không gian hoặc trạng thái hiện hành.
                         </td>
                       </tr>
                     ) : (
-                      paginatedCommunes.map((commune) => {
+                      paginatedTableData.map((item) => {
+                        const isOverdueUnit = isPeriodOverdue && item.status !== 'APPROVED';
+
                         // Custom tags logic for table
                         let statusBadge = (
                           <span className="text-xs font-extrabold text-slate-500 bg-slate-50 border border-slate-150 px-2.5 py-1 rounded-full uppercase">
@@ -712,19 +997,26 @@ export default function ReportPeriodsTab({
                           </span>
                         );
 
-                        if (commune.status === 'APPROVED') {
+                        if (isOverdueUnit) {
+                          statusBadge = (
+                            <span className="text-xs font-extrabold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full uppercase flex items-center justify-center gap-1.5 animate-pulse">
+                              <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                              Trễ hạn nộp
+                            </span>
+                          );
+                        } else if (item.status === 'APPROVED') {
                           statusBadge = (
                             <span className="text-xs font-extrabold text-[#10b981] bg-[#ecfdf5] border border-emerald-100 px-2.5 py-1 rounded-full uppercase">
-                              Đã thẩm định
+                              {isSupervisor ? 'Đã phê duyệt' : 'Đã thẩm định'}
                             </span>
                           );
-                        } else if (commune.status === 'SUBMITTED') {
+                        } else if (item.status === 'SUBMITTED') {
                           statusBadge = (
                             <span className="text-xs font-extrabold text-amber-700 bg-[#fffbeb] border border-amber-100 px-2.5 py-1 rounded-full uppercase">
-                              Chờ thẩm định
+                              {isSupervisor ? 'Chờ phê duyệt' : 'Chờ thẩm định'}
                             </span>
                           );
-                        } else if (commune.status === 'REVISION') {
+                        } else if (item.status === 'REVISION') {
                           statusBadge = (
                             <span className="text-xs font-extrabold text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-full uppercase">
                               Yêu cầu sửa
@@ -732,113 +1024,191 @@ export default function ReportPeriodsTab({
                           );
                         }
 
-                        return (
-                          <tr key={commune.id} className="hover:bg-slate-50/50 transition-colors">
+                        if (isSupervisor) {
+                          // Render Province row
+                          const prov = item as ProvinceSubmission;
+                          return (
+                            <tr key={prov.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-4.5 px-6">
+                                <div>
+                                  <span className="text-xs font-extrabold text-[#0f2942] block">
+                                    {prov.name}
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-400 block mt-0.5">
+                                    Mã tỉnh: {prov.code}
+                                  </span>
+                                </div>
+                              </td>
 
-                            {/* Commune and ID */}
-                            <td className="py-4.5 px-6">
-                              <div>
-                                <span className="text-xs font-extrabold text-[#0f2942] block">
-                                  {commune.name}
+                              <td className="py-4.5 px-4 text-center">
+                                <span className="text-xs font-semibold text-slate-600">
+                                  {prov.region}
                                 </span>
-                                <span className="text-xs font-bold text-slate-400 block mt-0.5">
-                                  Mã: {commune.code}
-                                </span>
-                              </div>
-                            </td>
+                              </td>
 
-                            {/* Province belonging to */}
-                            <td className="py-4.5 px-4 text-center">
-                              <span className="text-xs font-semibold text-slate-600">
-                                {commune.province}
-                              </span>
-                            </td>
+                              <td className="py-4.5 px-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <div className="flex gap-1" title={`${prov.submitted}/${prov.total} biểu mẫu đã gửi`}>
+                                    {[...Array(prov.total)].map((_, i) => {
+                                      const isFilled = i < prov.submitted;
+                                      let activeColor = 'bg-slate-300';
+                                      if (prov.status === 'APPROVED') {
+                                        activeColor = 'bg-[#10b981]';
+                                      } else if (prov.status === 'SUBMITTED') {
+                                        activeColor = 'bg-[#f59e0b]';
+                                      } else if (prov.status === 'REVISION') {
+                                        activeColor = 'bg-[#ef4444]';
+                                      }
+                                      return (
+                                        <span
+                                          key={i}
+                                          className={`w-3.5 h-1.5 rounded-[1px] inline-block transition-colors ${isFilled ? activeColor : 'bg-[#e2e8f0]'
+                                            }`}
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                  <span className="text-xs font-extrabold text-[#475569] min-w-[20px] text-left">
+                                    {prov.submitted}/{prov.total}
+                                  </span>
+                                </div>
+                              </td>
 
-                            {/* Phân nhóm Xã (Group) */}
-                            <td className="py-4.5 px-4 text-center">
-                              {isProvince ? (
-                                <select
-                                  value={commune.group || 'II'}
-                                  onChange={(e) => {
-                                    const val = e.target.value as 'I' | 'II' | 'III';
-                                    setCommunes(prev => prev.map(c => c.id === commune.id ? { ...c, group: val } : c));
-                                    triggerToast(`Đã cập nhật ${commune.name} sang Nhóm ${val}!`, 'success');
-                                  }}
-                                  className="px-2 py-1 bg-white border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-extrabold text-[#014285] focus:border-[#2563eb] outline-none transition-all cursor-pointer font-sans"
-                                >
-                                  <option value="I">Nhóm I</option>
-                                  <option value="II">Nhóm II</option>
-                                  <option value="III">Nhóm III</option>
-                                </select>
-                              ) : (
-                                <>
-                                  {commune.group === 'I' && (
-                                    <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 font-extrabold text-[10px] rounded-lg border border-blue-200 uppercase">
-                                      Nhóm I
-                                    </span>
+                              <td className="py-4.5 px-4 text-center">
+                                {statusBadge}
+                              </td>
+
+                              <td className="py-4.5 px-4 text-center">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  {prov.status !== 'PENDING' && !isOverdueUnit && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        triggerToast(`Đang hiển thị tóm tắt tình trạng nộp báo cáo của ${prov.name}`, 'info');
+                                      }}
+                                      className="p-1 px-2 text-[#2563eb] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                      title="Xem nhanh chi tiết trạng thái"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                    </button>
                                   )}
-                                  {commune.group === 'II' && (
-                                    <span className="inline-flex items-center px-2.5 py-1 bg-amber-50 text-amber-700 font-extrabold text-[10px] rounded-lg border border-amber-200 uppercase">
-                                      Nhóm II
-                                    </span>
-                                  )}
-                                  {commune.group === 'III' && (
-                                    <span className="inline-flex items-center px-2.5 py-1 bg-purple-50 text-purple-700 font-extrabold text-[10px] rounded-lg border border-purple-200 uppercase">
-                                      Nhóm III
-                                    </span>
-                                  )}
-                                  {!commune.group && (
-                                    <span className="inline-flex items-center px-2.5 py-1 bg-slate-50 text-slate-500 font-extrabold text-[10px] rounded-lg border border-slate-200 uppercase">
-                                      Chưa gán
-                                    </span>
-                                  )}
-                                </>
-                              )}
-                            </td>
-
-                            {/* Progress block indicator */}
-                            <td className="py-4.5 px-4 text-center">
-                              {renderProgressBlocks(commune)}
-                            </td>
-
-                            {/* Status Pill */}
-                            <td className="py-4.5 px-4 text-center">
-                              {statusBadge}
-                            </td>
-
-                            {/* Actions button */}
-                            <td className="py-4.5 px-4 text-center">
-                              <div className="flex items-center justify-center gap-1">
-
-                                {commune.status !== 'PENDING' ? (
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      setSelectedCommuneDetails(commune);
-                                    }}
-                                    className="p-1 px-2 text-[#2563eb] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                    title="Xem nhanh chi tiết trạng thái"
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      triggerToast(`Đã gửi thông báo nhắc nhở nộp số liệu tới ${commune.name}!`, 'success');
-                                    }}
-                                    className="p-1 px-2 text-indigo-505 hover:bg-indigo-50 text-indigo-600 rounded-lg transition-colors cursor-pointer"
-                                    title="Gửi thư nhắc nhở đôn đốc nộp số liệu"
+                                    onClick={() => handleSendIndividualReminder(prov.name, isOverdueUnit)}
+                                    className={`p-1 px-2 rounded-lg transition-colors cursor-pointer ${isOverdueUnit
+                                      ? 'text-rose-600 hover:bg-rose-50'
+                                      : 'text-indigo-600 hover:bg-indigo-50'
+                                      }`}
+                                    title={isOverdueUnit ? "Gửi đôn đốc khẩn cấp trễ hạn" : "Gửi thư nhắc nhở đôn đốc nộp số liệu"}
                                   >
                                     <Mail className="w-4 h-4" />
                                   </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        } else {
+                          // Render Commune row
+                          const commune = item as CommuneSubmission;
+                          return (
+                            <tr key={commune.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-4.5 px-6">
+                                <div>
+                                  <span className="text-xs font-extrabold text-[#0f2942] block">
+                                    {commune.name}
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-400 block mt-0.5">
+                                    Mã: {commune.code}
+                                  </span>
+                                </div>
+                              </td>
+
+                              <td className="py-4.5 px-4 text-center">
+                                <span className="text-xs font-semibold text-slate-600">
+                                  {commune.province}
+                                </span>
+                              </td>
+
+                              <td className="py-4.5 px-4 text-center">
+                                {isProvince ? (
+                                  <select
+                                    value={commune.group || 'II'}
+                                    onChange={(e) => {
+                                      const val = e.target.value as 'I' | 'II' | 'III';
+                                      setCommunes(prev => prev.map(c => c.id === commune.id ? { ...c, group: val } : c));
+                                      triggerToast(`Đã cập nhật ${commune.name} sang Nhóm ${val}!`, 'success');
+                                    }}
+                                    className="px-2 py-1 bg-white border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-extrabold text-[#014285] focus:border-[#2563eb] outline-none transition-all cursor-pointer font-sans"
+                                  >
+                                    <option value="I">Nhóm I</option>
+                                    <option value="II">Nhóm II</option>
+                                    <option value="III">Nhóm III</option>
+                                  </select>
+                                ) : (
+                                  <>
+                                    {commune.group === 'I' && (
+                                      <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 font-extrabold text-[10px] rounded-lg border border-blue-200 uppercase">
+                                        Nhóm I
+                                      </span>
+                                    )}
+                                    {commune.group === 'II' && (
+                                      <span className="inline-flex items-center px-2.5 py-1 bg-amber-50 text-amber-700 font-extrabold text-[10px] rounded-lg border border-amber-200 uppercase">
+                                        Nhóm II
+                                      </span>
+                                    )}
+                                    {commune.group === 'III' && (
+                                      <span className="inline-flex items-center px-2.5 py-1 bg-purple-50 text-purple-700 font-extrabold text-[10px] rounded-lg border border-purple-200 uppercase">
+                                        Nhóm III
+                                      </span>
+                                    )}
+                                    {!commune.group && (
+                                      <span className="inline-flex items-center px-2.5 py-1 bg-slate-50 text-slate-500 font-extrabold text-[10px] rounded-lg border border-slate-200 uppercase">
+                                        Chưa gán
+                                      </span>
+                                    )}
+                                  </>
                                 )}
+                              </td>
 
-                              </div>
-                            </td>
+                              <td className="py-4.5 px-4 text-center">
+                                {renderProgressBlocks(commune)}
+                              </td>
 
-                          </tr>
-                        );
+                              <td className="py-4.5 px-4 text-center">
+                                {statusBadge}
+                              </td>
+
+                              <td className="py-4.5 px-4 text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  {commune.status !== 'PENDING' && !isOverdueUnit ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedCommuneDetails(commune);
+                                      }}
+                                      className="p-1 px-2 text-[#2563eb] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                      title="Xem nhanh chi tiết trạng thái"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSendIndividualReminder(commune.name, isOverdueUnit)}
+                                      className={`p-1 px-2 rounded-lg transition-colors cursor-pointer ${isOverdueUnit
+                                        ? 'text-rose-600 hover:bg-rose-50'
+                                        : 'text-indigo-600 hover:bg-indigo-50'
+                                        }`}
+                                      title={isOverdueUnit ? "Gửi đôn đốc khẩn cấp trễ hạn" : "Gửi thư nhắc nhở đôn đốc nộp số liệu"}
+                                    >
+                                      <Mail className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
                       })
                     )}
                   </tbody>
@@ -848,25 +1218,25 @@ export default function ReportPeriodsTab({
               {/* Custom pagination control driven exactly by reference */}
               <div className="bg-[#f8fafc] border-t border-slate-200 px-6 py-4 flex items-center justify-between text-xs font-bold text-[#475569]">
                 <div>
-                  Hiển thị <span className="text-[#0f2942] font-black">{tableStartIndex + 1} - {Math.min(tableStartIndex + itemsPerPageTable, filteredCommunes.length)}</span> trong tổng số <span className="text-[#0f2942] font-black">{filteredCommunes.length}</span> đơn vị
+                  Hiển thị <span className="text-[#0f2942] font-black">{tableStartIndex + 1} - {Math.min(tableStartIndex + itemsPerPageTable, tableDataList.length)}</span> trong tổng số <span className="text-[#0f2942] font-black">{tableDataList.length}</span> đơn vị
                 </div>
 
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => handleCommunePageSelect(tablePage - 1)}
+                    onClick={() => handleTablePageSelect(tablePage - 1)}
                     disabled={tablePage === 1}
                     className="p-1.5 border border-slate-200 rounded bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
 
-                  {[...Array(totalCommunePages)].map((_, i) => {
+                  {[...Array(totalTablePages)].map((_, i) => {
                     const pNum = i + 1;
                     const isActive = tablePage === pNum;
                     return (
                       <button
                         key={pNum}
-                        onClick={() => handleCommunePageSelect(pNum)}
+                        onClick={() => handleTablePageSelect(pNum)}
                         className={`w-7.5 h-7.5 text-xs rounded border flex items-center justify-center transition-all cursor-pointer ${isActive
                           ? 'bg-[#2563eb] border-[#2563eb] text-white font-black'
                           : 'bg-white border-slate-200 hover:bg-slate-50 font-bold'
@@ -878,7 +1248,7 @@ export default function ReportPeriodsTab({
                   })}
 
                   {/* Add a placeholder page ellipsis if large total exists to simulate screenshot's max of page 50 */}
-                  {totalCommunePages < 5 && (
+                  {totalTablePages < 5 && (
                     <>
                       <span className="text-[#64748b] px-1 font-normal">...</span>
                       <button
@@ -891,9 +1261,9 @@ export default function ReportPeriodsTab({
                   )}
 
                   <button
-                    onClick={() => handleCommunePageSelect(tablePage + 1)}
-                    disabled={tablePage === totalCommunePages}
-                    className="p-1.5 border border-slate-200 rounded bg-white text-slate-550 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => handleTablePageSelect(tablePage + 1)}
+                    disabled={tablePage === totalTablePages}
+                    className="p-1.5 border border-slate-200 rounded bg-white text-slate-555 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -901,7 +1271,7 @@ export default function ReportPeriodsTab({
               </div>
 
             </div>
-          }
+          )}
           {/* 5. Lower guide and technical support cards matches screen exactly */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
 
@@ -1383,7 +1753,7 @@ export default function ReportPeriodsTab({
       {/* CRUD Reporting Period Create Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-slide-up">
+          <div className="bg-white rounded-2xl max-w-2xl w-full py-4 px-6 shadow-2xl border border-slate-100 animate-slide-up">
 
             <div className="flex justify-between items-start mb-4 pb-2.5 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -1401,16 +1771,190 @@ export default function ReportPeriodsTab({
             </div>
 
             <form onSubmit={handleCreatePeriod} className="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-extrabold text-[#475569] block mb-1 uppercase tracking-wider">Cấp báo cáo</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={userSession.role === 'SUPERVISOR' ? 'Báo cáo cấp Tỉnh (Gửi các Tỉnh)' : 'Báo cáo cấp Xã (Gửi các Xã)'}
+                    className="w-full text-xs p-2.5 bg-slate-100 border border-slate-200 rounded-lg outline-none font-bold text-slate-500 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-extrabold text-[#475569] block mb-1 uppercase tracking-wider">Tên đợt báo cáo</label>
+                  <input
+                    type="text"
+                    required
+                    value={pName}
+                    onChange={(e) => setPName(e.target.value)}
+                    placeholder="Ví dụ: Đợt báo cáo NTM 6 tháng đầu năm 2024"
+                    className="w-full text-xs p-2.5 border border-slate-200 outline-none rounded-lg focus:border-[#2563eb] bg-slate-50 font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-extrabold text-[#475569] block mb-1 uppercase tracking-wider">Năm báo cáo</label>
+                  <select
+                    value={pYear}
+                    onChange={(e) => setPYear(e.target.value)}
+                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800"
+                  >
+                    <option value="2024">Năm 2024</option>
+                    <option value="2025">Năm 2025</option>
+                    <option value="2026">Năm 2026</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-extrabold text-[#475569] block mb-1 uppercase tracking-wider">Kỳ kiểm phẩm</label>
+                  <select
+                    value={pTerm}
+                    onChange={(e) => setPTerm(e.target.value)}
+                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800"
+                  >
+                    <option value="6 tháng đầu năm">6 Tháng đầu năm</option>
+                    <option value="Toàn diện cả năm">Toàn diện cả năm</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label className="text-xs font-extrabold text-[#475569] block mb-1 uppercase tracking-wider">Cấp báo cáo</label>
+                <label className="text-xs font-extrabold text-[#475569] block mb-1 uppercase tracking-wider">Hạn cuối gửi báo cáo</label>
                 <input
-                  type="text"
-                  disabled
-                  value={userSession.role === 'SUPERVISOR' ? 'Báo cáo cấp Tỉnh (Gửi các Tỉnh)' : 'Báo cáo cấp Xã (Gửi các Xã)'}
-                  className="w-full text-xs p-2.5 bg-slate-100 border border-slate-200 rounded-lg outline-none font-bold text-slate-500 cursor-not-allowed"
+                  type="date"
+                  required
+                  value={pDeadline}
+                  onChange={(e) => setPDeadline(e.target.value)}
+                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-800"
                 />
               </div>
 
+              {/* Targets checklist selection */}
+              <div>
+                <label className="text-xs font-extrabold text-[#475569] block mb-1.5 uppercase tracking-wider">
+                  {userSession.role === 'SUPERVISOR' ? 'Chọn các Tỉnh nhận yêu cầu' : 'Chọn các Xã nhận yêu cầu'}
+                </label>
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 max-h-36 overflow-y-auto space-y-2">
+                  {(userSession.role === 'SUPERVISOR'
+                    ? ['Tỉnh Đông', 'Tỉnh Thái Thụy', 'Tỉnh Bắc', 'Tỉnh Nam']
+                    : ['Xã Bình Minh', 'Xã Thụy Xuân', 'Xã Vũ Hội', 'Xã Quang Trung', 'Xã Hồng Phong', 'Xã Tiến Đức', 'Xã An Phú']
+                  ).map((target) => {
+                    const isChecked = selectedTargets.includes(target);
+                    return (
+                      <label key={target} className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedTargets((prev) => [...prev, target]);
+                            } else {
+                              setSelectedTargets((prev) => prev.filter((t) => t !== target));
+                            }
+                          }}
+                          className="w-3.5 h-3.5 text-[#2563eb] border-slate-300 rounded focus:ring-blue-500"
+                        />
+                        <span>{target}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Forms checklist selection */}
+              <div>
+                <label className="text-xs font-extrabold text-[#475569] block mb-1.5 uppercase tracking-wider">
+                  Chọn các biểu mẫu áp dụng <span className="text-red-500">*</span>
+                </label>
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 max-h-40 overflow-y-auto space-y-2">
+                  {(() => {
+                    const customTemplatesJson = localStorage.getItem('NTM_FormTemplates');
+                    let customTemplates: any[] = [];
+                    if (customTemplatesJson) {
+                      try { customTemplates = JSON.parse(customTemplatesJson); } catch (e) { }
+                    }
+                    const allAvailable = [
+                      ...FORM_METAS,
+                      ...customTemplates.map(t => ({ code: t.code, title: t.title, isCustom: true }))
+                    ];
+                    return allAvailable.map((form) => {
+                      const isChecked = selectedFormCodes.includes(form.code);
+                      return (
+                        <label key={form.code} className="flex items-start gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none hover:text-slate-900">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedFormCodes((prev) => [...prev, form.code]);
+                              } else {
+                                setSelectedFormCodes((prev) => prev.filter((c) => c !== form.code));
+                              }
+                            }}
+                            className="w-3.5 h-3.5 mt-0.5 text-[#2563eb] border-slate-300 rounded focus:ring-blue-500"
+                          />
+                          <div className="flex-1">
+                            <span className="text-[#014285] font-black">{form.code}:</span>{' '}
+                            <span className="text-slate-650 font-semibold">{form.title}</span>
+                          </div>
+                        </label>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+
+              {/* <div className="bg-amber-50 p-3.5 rounded-lg border border-amber-100 flex gap-2">
+                <AlertCircle className="w-4.5 h-4.5 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 leading-normal font-medium">
+                  <strong>Chú ý nghiệp vụ:</strong> Việc thiết tạo đợt rà soát mới sẽ tự kích hoạt nhân bản các Phụ biểu đã chọn chứa các trọng số và cơ sở phân loại chuẩn nông thôn mới.
+                </p>
+              </div> */}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 py-2.5 border border-slate-305 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-[#2563eb] text-white text-xs font-black rounded-lg hover:bg-[#1d4ed8] shadow-sm cursor-pointer"
+                >
+                  Khởi tạo đợt mới
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CRUD Reporting Period Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full px-6 py-4 shadow-2xl border border-slate-100 animate-slide-up">
+
+            <div className="flex justify-between items-start mb-4 pb-2.5 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-50 text-[#014285] rounded-lg">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-[#0f2942]">Hiệu chỉnh đợt báo cáo</h4>
+                  <p className="text-xs text-slate-500 font-semibold">Cập nhật thông tin chu trình biểu mẫu</p>
+                </div>
+              </div>
+              <button onClick={() => { setShowEditModal(false); setActivePeriod(null); }} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
                 <label className="text-xs font-extrabold text-[#475569] block mb-1 uppercase tracking-wider">Tên đợt báo cáo</label>
                 <input
@@ -1419,7 +1963,7 @@ export default function ReportPeriodsTab({
                   value={pName}
                   onChange={(e) => setPName(e.target.value)}
                   placeholder="Ví dụ: Đợt báo cáo NTM 6 tháng đầu năm 2024"
-                  className="w-full text-xs p-2.5 border border-slate-200 outline-none rounded-lg focus:border-[#2563eb] bg-slate-50 font-semibold"
+                  className="w-full text-xs p-2.5 border border-slate-200 outline-none rounded-lg focus:border-[#014285] bg-slate-50 font-semibold"
                 />
               </div>
 
@@ -1493,26 +2037,62 @@ export default function ReportPeriodsTab({
                 </div>
               </div>
 
-              <div className="bg-amber-50 p-3.5 rounded-lg border border-amber-100 flex gap-2">
-                <AlertCircle className="w-4.5 h-4.5 text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-800 leading-normal font-medium">
-                  <strong>Chú ý nghiệp vụ:</strong> Việc thiết tạo đợt rà soát mới sẽ tự kích hoạt nhân bản bộ 10 Phụ biểu quốc gia (Biểu 04 đến 13) chứa các trọng số và cơ sở phân loại chuẩn nông thôn mới.
-                </p>
+              {/* Forms checklist selection */}
+              <div>
+                <label className="text-xs font-extrabold text-[#475569] block mb-1.5 uppercase tracking-wider">
+                  Chọn các biểu mẫu áp dụng <span className="text-red-500">*</span>
+                </label>
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 max-h-40 overflow-y-auto space-y-2">
+                  {(() => {
+                    const customTemplatesJson = localStorage.getItem('NTM_FormTemplates');
+                    let customTemplates: any[] = [];
+                    if (customTemplatesJson) {
+                      try { customTemplates = JSON.parse(customTemplatesJson); } catch (e) { }
+                    }
+                    const allAvailable = [
+                      ...FORM_METAS,
+                      ...customTemplates.map(t => ({ code: t.code, title: t.title, isCustom: true }))
+                    ];
+                    return allAvailable.map((form) => {
+                      const isChecked = selectedFormCodes.includes(form.code);
+                      return (
+                        <label key={form.code} className="flex items-start gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none hover:text-slate-900">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedFormCodes((prev) => [...prev, form.code]);
+                              } else {
+                                setSelectedFormCodes((prev) => prev.filter((c) => c !== form.code));
+                              }
+                            }}
+                            className="w-3.5 h-3.5 mt-0.5 text-[#2563eb] border-slate-300 rounded focus:ring-blue-500"
+                          />
+                          <div className="flex-1">
+                            <span className="text-[#014285] font-black">{form.code}:</span>{' '}
+                            <span className="text-slate-650 font-semibold">{form.title}</span>
+                          </div>
+                        </label>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-2.5 border border-slate-305 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 cursor-pointer"
+                  onClick={() => { setShowEditModal(false); setActivePeriod(null); }}
+                  className="flex-1 py-2.5 border border-slate-305 text-slate-605 text-xs font-bold rounded-lg hover:bg-slate-50 cursor-pointer"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-[#2563eb] text-white text-xs font-black rounded-lg hover:bg-[#1d4ed8] shadow-sm cursor-pointer"
+                  className="flex-1 py-2.5 bg-[#014285] hover:bg-[#002b54] text-white text-xs font-black rounded-lg shadow-sm cursor-pointer"
                 >
-                  Khởi tạo đợt mới
+                  Lưu thay đổi
                 </button>
               </div>
             </form>
