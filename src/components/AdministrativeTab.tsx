@@ -4,12 +4,16 @@ import {
   Building2, Globe, ShieldAlert, Award, ArrowLeft, ChevronLeft, ChevronRight,
   TrendingUp, BarChart3
 } from 'lucide-react';
-import { UserSession, CommuneSubmission, ProvinceItem } from '../types';
+import { UserSession, CommuneSubmission, ProvinceItem, ProvinceSubmission } from '../types';
 
 interface AdministrativeTabProps {
   userSession: UserSession;
   communes: CommuneSubmission[];
   setCommunes: React.Dispatch<React.SetStateAction<CommuneSubmission[]>>;
+  provinces: ProvinceItem[];
+  setProvinces: React.Dispatch<React.SetStateAction<ProvinceItem[]>>;
+  provinceSubmissions: ProvinceSubmission[];
+  setProvinceSubmissions: React.Dispatch<React.SetStateAction<ProvinceSubmission[]>>;
 }
 
 export const INITIAL_PROVINCES: ProvinceItem[] = [
@@ -52,23 +56,12 @@ export const INITIAL_PROVINCES: ProvinceItem[] = [
 export default function AdministrativeTab({
   userSession,
   communes,
-  setCommunes
+  setCommunes,
+  provinces,
+  setProvinces,
+  provinceSubmissions,
+  setProvinceSubmissions
 }: AdministrativeTabProps) {
-  // 1. Provinces state
-  const [provinces, setProvinces] = useState<ProvinceItem[]>(() => {
-    const saved = localStorage.getItem('NTM_Provinces');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
-    return INITIAL_PROVINCES;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('NTM_Provinces', JSON.stringify(provinces));
-  }, [provinces]);
 
   // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -144,6 +137,19 @@ export default function AdministrativeTab({
       const updated = provinces.map(p => p.code === editProvItem.code ? { code: provCode.trim(), name: provName.trim() } : p);
       setProvinces(updated);
       triggerToast(`Đã cập nhật tỉnh: ${provName}`);
+
+      // Sync name change to communes (referential integrity)
+      if (editProvItem.name !== provName.trim()) {
+        setCommunes(prev => prev.map(c => c.province === editProvItem.name ? { ...c, province: provName.trim() } : c));
+      }
+
+      // Sync to provinceSubmissions
+      setProvinceSubmissions(prev => prev.map(p => p.code === editProvItem.code ? {
+        ...p,
+        name: provName.trim(),
+        code: provCode.trim()
+      } : p));
+
     } else {
       // Add
       if (provinces.some(p => p.code.toLowerCase() === provCode.trim().toLowerCase())) {
@@ -152,6 +158,19 @@ export default function AdministrativeTab({
       }
       setProvinces([...provinces, { code: provCode.trim(), name: provName.trim() }]);
       triggerToast(`Đã thêm tỉnh mới: ${provName}`);
+
+      // Sync to provinceSubmissions
+      const newProvSub: ProvinceSubmission = {
+        id: `prov-${Date.now()}`,
+        name: provName.trim(),
+        code: provCode.trim(),
+        submitted: 0,
+        total: 6,
+        status: 'PENDING',
+        updatedAt: '--',
+        region: 'Đồng bằng sông Hồng' // default region
+      };
+      setProvinceSubmissions([...provinceSubmissions, newProvSub]);
     }
 
     setProvCode('');
@@ -168,9 +187,17 @@ export default function AdministrativeTab({
   };
 
   const handleDeleteProv = (code: string, name: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa ${name}? Lưu ý: Mọi xã trực thuộc tỉnh này sẽ được gán lại.`)) {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa ${name}?`)) {
       setProvinces(provinces.filter(p => p.code !== code));
       triggerToast(`Đã xóa tỉnh: ${name}`);
+
+      // Sync to provinceSubmissions
+      setProvinceSubmissions(prev => prev.filter(p => p.code !== code));
+
+      // Reassign communes of deleted province to first available province
+      const remainingProvs = provinces.filter(p => p.code !== code);
+      const fallbackProvName = remainingProvs[0]?.name || 'Tỉnh Đông';
+      setCommunes(prev => prev.map(c => c.province === name ? { ...c, province: fallbackProvName } : c));
     }
   };
 
@@ -275,27 +302,47 @@ export default function AdministrativeTab({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                if (activeSubTab === 'communes') {
-                  setEditCommItem(null);
-                  setCommName('');
-                  setCommCode('');
-                  setCommProv(provinces[0]?.name || 'Tỉnh Đông');
-                  setCommGroup('I');
-                  setShowCommModal(true);
-                } else {
-                  setEditProvItem(null);
-                  setProvCode('');
-                  setProvName('');
-                  setShowProvModal(true);
-                }
-              }}
-              className="px-4 py-2.5 bg-[#014285] hover:bg-[#002d5c] text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Thêm {activeSubTab === 'communes' ? 'Xã' : 'Tỉnh'} mới</span>
-            </button>
+            {activeSubTab === 'communes' ? (
+              userSession.role === 'APPRAISER' ? (
+                <button
+                  onClick={() => {
+                    setEditCommItem(null);
+                    setCommName('');
+                    setCommCode('');
+                    setCommProv(provinces[0]?.name || 'Tỉnh Đông');
+                    setCommGroup('I');
+                    setShowCommModal(true);
+                  }}
+                  className="px-4 py-2.5 bg-[#014285] hover:bg-[#002d5c] text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Thêm Xã mới</span>
+                </button>
+              ) : (
+                <span className="text-xs text-[#64748b] bg-slate-100 border border-slate-200 py-2 px-3 rounded-lg font-bold">
+                  Chỉ Cấp Tỉnh mới được tạo Xã
+                </span>
+              )
+            ) : (
+              userSession.role === 'SUPERVISOR' ? (
+                <button
+                  onClick={() => {
+                    setEditProvItem(null);
+                    setProvCode('');
+                    setProvName('');
+                    setShowProvModal(true);
+                  }}
+                  className="px-4 py-2.5 bg-[#014285] hover:bg-[#002d5c] text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Thêm Tỉnh mới</span>
+                </button>
+              ) : (
+                <span className="text-xs text-[#64748b] bg-slate-100 border border-slate-200 py-2 px-3 rounded-lg font-bold">
+                  Chỉ Cấp Bộ mới được tạo Tỉnh
+                </span>
+              )
+            )}
           </div>
         </div>
       </div>
@@ -461,22 +508,26 @@ export default function AdministrativeTab({
                         }</span>
                       </td>
                       <td className="py-3.5 px-6 text-center">
-                        <div className="flex justify-center items-center gap-2">
-                          <button
-                            onClick={() => handleEditComm(c)}
-                            className="p-1 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-                            title="Sửa xã"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteComm(c.id, c.name)}
-                            className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
-                            title="Xóa xã"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        {userSession.role === 'APPRAISER' ? (
+                          <div className="flex justify-center items-center gap-2">
+                            <button
+                              onClick={() => handleEditComm(c)}
+                              className="p-1 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                              title="Sửa xã"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteComm(c.id, c.name)}
+                              className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                              title="Xóa xã"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">Chỉ xem</span>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -502,22 +553,26 @@ export default function AdministrativeTab({
                       <td className="py-3.5 px-6 font-bold">{p.name}</td>
                       <td className="py-3.5 px-6">{subCommCount} xã hiện hữu</td>
                       <td className="py-3.5 px-6 text-center">
-                        <div className="flex justify-center items-center gap-2">
-                          <button
-                            onClick={() => handleEditProv(p)}
-                            className="p-1 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-                            title="Sửa tỉnh"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProv(p.code, p.name)}
-                            className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
-                            title="Xóa tỉnh"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        {userSession.role === 'SUPERVISOR' ? (
+                          <div className="flex justify-center items-center gap-2">
+                            <button
+                              onClick={() => handleEditProv(p)}
+                              className="p-1 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                              title="Sửa tỉnh"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProv(p.code, p.name)}
+                              className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                              title="Xóa tỉnh"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">Chỉ xem</span>
+                        )}
                       </td>
                     </tr>
                   );

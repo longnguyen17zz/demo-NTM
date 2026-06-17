@@ -41,6 +41,7 @@ export interface ResourceInvestRow {
   kh_tinDung: number;
   kh_doanhNghiep: number;
   kh_danGop: number;
+  parentId?: number;
   note: string;
 }
 

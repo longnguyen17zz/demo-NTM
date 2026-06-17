@@ -2178,8 +2178,53 @@ export default function FormDetailView({
       setTimeout(() => setNotifyMessage(null), 3000);
     };
 
+    const handleAddChildItem = (parentId: any) => {
+      const parentRow = form.data.find((r: any) => r.id === parentId);
+      if (!parentRow) return;
+
+      const maxId = form.data.reduce((max: number, r: any) => Math.max(max, Number(r.id) || 0), 0);
+      const nextId = maxId + 1;
+
+      const newChildRow = {
+        id: nextId,
+        isHeader: false,
+        sectionCode: parentRow.sectionCode,
+        parentId: parentRow.id,
+        category: "Nội dung con mới",
+        quantity: 0,
+        hd_nstw_dtpt: 0, hd_nstw_sn: 0, hd_nsdp: 0, hd_longGhep: 0, hd_tinDung: 0, hd_doanhNghiep: 0, hd_danGop: 0,
+        kh_nstw_dtpt: 0, kh_nstw_sn: 0, kh_nsdp: 0, kh_longGhep: 0, kh_tinDung: 0, kh_doanhNghiep: 0, kh_danGop: 0,
+        note: ""
+      };
+
+      const updatedData = [...form.data];
+      let insertIndex = -1;
+      for (let i = 0; i < updatedData.length; i++) {
+        if (updatedData[i].id === parentId) {
+          insertIndex = i;
+        } else if (updatedData[i].parentId === parentId) {
+          insertIndex = i;
+        }
+      }
+
+      if (insertIndex !== -1) {
+        updatedData.splice(insertIndex + 1, 0, newChildRow);
+      } else {
+        updatedData.push(newChildRow);
+      }
+
+      onUpdateForm({
+        ...form,
+        data: updatedData,
+        updatedAt: new Date().toISOString(),
+      });
+
+      setNotifyMessage("Đã thêm nội dung con mới thành công.");
+      setTimeout(() => setNotifyMessage(null), 3000);
+    };
+
     const handleDeleteRow = (rowId: any, category: string) => {
-      const updatedData = form.data.filter((r: any) => r.id !== rowId);
+      const updatedData = form.data.filter((r: any) => r.id !== rowId && r.parentId !== rowId);
       onUpdateForm({
         ...form,
         data: updatedData,
@@ -2192,6 +2237,8 @@ export default function FormDetailView({
     let countI = 0;
     let countII = 0;
     let countIII = 0;
+    const parentTTMap: { [parentId: number]: string } = {};
+    const childCountMap: { [parentId: number]: number } = {};
 
     return (
       <div className="space-y-6 animate-fade-in text-slate-800 font-sans pb-12" id={form.code === 'Biểu 09' ? 'bieu-09-view' : 'bieu-12-view'}>
@@ -2344,15 +2391,22 @@ export default function FormDetailView({
                   const kh_tot = kh_vdt_tot + (Number(row.kh_longGhep) || 0) + (Number(row.kh_tinDung) || 0) + (Number(row.kh_doanhNghiep) || 0) + (Number(row.kh_danGop) || 0);
 
                   let ttDisplay = "";
-                  if (row.sectionCode === "I") {
-                    countI++;
-                    ttDisplay = countI.toString();
-                  } else if (row.sectionCode === "II") {
-                    countII++;
-                    ttDisplay = countII.toString();
-                  } else if (row.sectionCode === "III") {
-                    countIII++;
-                    ttDisplay = countIII.toString();
+                  if (row.parentId) {
+                    const parentTT = parentTTMap[row.parentId] || "";
+                    childCountMap[row.parentId] = (childCountMap[row.parentId] || 0) + 1;
+                    ttDisplay = parentTT ? `${parentTT}.${childCountMap[row.parentId]}` : childCountMap[row.parentId].toString();
+                  } else {
+                    if (row.sectionCode === "I") {
+                      countI++;
+                      ttDisplay = countI.toString();
+                    } else if (row.sectionCode === "II") {
+                      countII++;
+                      ttDisplay = countII.toString();
+                    } else if (row.sectionCode === "III") {
+                      countIII++;
+                      ttDisplay = countIII.toString();
+                    }
+                    parentTTMap[row.id] = ttDisplay;
                   }
 
                   return (
@@ -2360,14 +2414,19 @@ export default function FormDetailView({
                       <td className="p-2 border-r border-[#e2e8f0] text-center text-slate-500 font-mono font-bold select-none">{ttDisplay}</td>
 
                       <td className="p-2 border-r border-[#e2e8f0] sticky left-0 bg-white hover:bg-slate-50 transition-colors z-10 shadow-[2px_0_5px_rgba(0,0,0,0.01)] min-w-[320px]">
-                        <input
-                          type="text"
-                          value={row.category || ''}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'category', e.target.value)}
-                          className="w-full text-xs font-bold text-slate-800 bg-transparent border-none outline-none focus:bg-slate-100 hover:bg-slate-50/70 px-2.5 py-1.5 rounded-lg focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all placeholder:font-light"
-                          placeholder="Nhập nội dung thực hiện..."
-                        />
+                        <div className="flex items-center gap-1.5 w-full">
+                          {row.parentId && (
+                            <span className="text-slate-400 pl-4 shrink-0 font-light select-none">↳</span>
+                          )}
+                          <input
+                            type="text"
+                            value={row.category || ''}
+                            disabled={!isDr}
+                            onChange={(e) => handleInputChange(row.id, 'category', e.target.value)}
+                            className={`w-full text-xs font-bold text-slate-800 bg-transparent border-none outline-none focus:bg-slate-100 hover:bg-slate-50/70 px-2.5 py-1.5 rounded-lg focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all placeholder:font-light ${row.parentId ? 'pl-1 text-slate-600 font-semibold' : ''}`}
+                            placeholder={row.parentId ? "Nhập nội dung con..." : "Nhập nội dung thực hiện..."}
+                          />
+                        </div>
                       </td>
 
                       <td className="p-1 px-2 border-r border-[#e2e8f0]">
@@ -2549,14 +2608,26 @@ export default function FormDetailView({
 
                       {isDr && (
                         <td className="p-1 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteRow(row.id, row.category)}
-                            className="text-slate-400 hover:text-red-500 hover:bg-red-55/10 p-2 rounded-xl transition-all border-none bg-transparent cursor-pointer flex items-center justify-center mx-auto"
-                            title="Xóa dòng này"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-between gap-1 w-full max-w-[60px] mx-auto">
+                            {!row.parentId && (
+                              <button
+                                type="button"
+                                onClick={() => handleAddChildItem(row.id)}
+                                className="text-slate-400 hover:text-[#014285] hover:bg-blue-50/30 p-2 rounded-xl transition-all border-none bg-transparent cursor-pointer flex items-center justify-center"
+                                title="Thêm nội dung con"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRow(row.id, row.category)}
+                              className="text-slate-400 hover:text-red-500 hover:bg-red-55/10 p-2 rounded-xl transition-all border-none bg-transparent cursor-pointer flex items-center justify-center"
+                              title="Xóa dòng này"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>

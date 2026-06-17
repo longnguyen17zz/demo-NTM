@@ -27,7 +27,7 @@ import AccountsTab from './components/AccountsTab';
 import FormDesignerTab from './components/FormDesignerTab';
 import IndicatorStatisticsTab from './components/IndicatorStatisticsTab';
 
-import { CriterionRow, ReportMeta, NotificationItem, ReportPeriod, FormReport, Criterion, UserSession, CommuneSubmission, ProvinceSubmission } from './types';
+import { CriterionRow, ReportMeta, NotificationItem, ReportPeriod, FormReport, Criterion, UserSession, CommuneSubmission, ProvinceSubmission, ProvinceItem } from './types';
 import {
   INITIAL_CRITERIA_ROWS,
   INITIAL_CRITERIA_ROWS_06,
@@ -40,7 +40,8 @@ import {
   INITIAL_PERIODS,
   createDefaultFormsForPeriod,
   DEFAULT_COMMUNES,
-  DEFAULT_PROVINCE_SUBMISSIONS
+  DEFAULT_PROVINCE_SUBMISSIONS,
+  INITIAL_PROVINCES
 } from './mockData';
 
 export default function App() {
@@ -84,6 +85,7 @@ export default function App() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [communes, setCommunes] = useState<CommuneSubmission[]>([]);
   const [provinceSubmissions, setProvinceSubmissions] = useState<ProvinceSubmission[]>([]);
+  const [provinces, setProvinces] = useState<ProvinceItem[]>([]);
   const [activeCommuneId, setActiveCommuneId] = useState<string>('com-1');
 
   useEffect(() => {
@@ -97,6 +99,12 @@ export default function App() {
       localStorage.setItem('NTM_ProvinceSubmissions', JSON.stringify(provinceSubmissions));
     }
   }, [provinceSubmissions]);
+
+  useEffect(() => {
+    if (provinces.length > 0) {
+      localStorage.setItem('NTM_Provinces', JSON.stringify(provinces));
+    }
+  }, [provinces]);
 
   useEffect(() => {
     localStorage.setItem('NTM_ActiveCommuneId', activeCommuneId);
@@ -152,6 +160,19 @@ export default function App() {
     } else {
       setProvinceSubmissions(DEFAULT_PROVINCE_SUBMISSIONS);
       localStorage.setItem('NTM_ProvinceSubmissions', JSON.stringify(DEFAULT_PROVINCE_SUBMISSIONS));
+    }
+
+    // Provinces load
+    const savedProvinces = localStorage.getItem('NTM_Provinces');
+    if (savedProvinces) {
+      try {
+        setProvinces(JSON.parse(savedProvinces));
+      } catch (e) {
+        setProvinces(INITIAL_PROVINCES);
+      }
+    } else {
+      setProvinces(INITIAL_PROVINCES);
+      localStorage.setItem('NTM_Provinces', JSON.stringify(INITIAL_PROVINCES));
     }
 
     // Active Commune load
@@ -608,6 +629,7 @@ export default function App() {
                   provinceSubmissions={provinceSubmissions}
                   setProvinceSubmissions={setProvinceSubmissions}
                   onAddNotification={addSystemNotification}
+                  provinces={provinces}
                 />
               )}
 
@@ -648,30 +670,34 @@ export default function App() {
               )}
 
               {currentTab === 'admin_units' && (
-                <AdministrativeTab 
-                  userSession={userSession} 
-                  communes={communes} 
-                  setCommunes={setCommunes} 
+                <AdministrativeTab
+                  userSession={userSession}
+                  communes={communes}
+                  setCommunes={setCommunes}
+                  provinces={provinces}
+                  setProvinces={setProvinces}
+                  provinceSubmissions={provinceSubmissions}
+                  setProvinceSubmissions={setProvinceSubmissions}
                 />
               )}
 
               {currentTab === 'accounts' && (
-                <AccountsTab 
-                  userSession={userSession} 
-                  onUpdateSession={handleUpdateSession} 
+                <AccountsTab
+                  userSession={userSession}
+                  onUpdateSession={handleUpdateSession}
                 />
               )}
 
               {currentTab === 'form_designer' && (
-                <FormDesignerTab 
-                  userSession={userSession} 
+                <FormDesignerTab
+                  userSession={userSession}
                 />
               )}
 
               {currentTab === 'indicator_statistics' && (
-                <IndicatorStatisticsTab 
-                  userSession={userSession} 
-                  communes={communes} 
+                <IndicatorStatisticsTab
+                  userSession={userSession}
+                  communes={communes}
                 />
               )}
             </>

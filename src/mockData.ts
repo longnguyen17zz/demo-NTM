@@ -1,4 +1,4 @@
-import { CriterionRow, ReportMeta, NotificationItem, ResourceInvestRow, CommuneSubmission, ProvinceSubmission } from './types';
+import { CriterionRow, ReportMeta, NotificationItem, ResourceInvestRow, CommuneSubmission, ProvinceSubmission, ProvinceItem } from './types';
 
 export const INITIAL_CRITERIA_ROWS: CriterionRow[] = [
   {
@@ -1295,6 +1295,48 @@ export const DEFAULT_PROVINCE_SUBMISSIONS: ProvinceSubmission[] = [
     region: 'Đồng bằng sông Hồng'
   }
 ];
+
+export const INITIAL_PROVINCES: ProvinceItem[] = [
+  { code: 'VN-TD', name: 'Tỉnh Đông' },
+  { code: 'VN-TT', name: 'Tỉnh Thái Thụy' },
+  { code: 'VN-TB', name: 'Tỉnh Bắc' },
+  { code: 'VN-TN', name: 'Tỉnh Nam' },
+  { code: 'VN-HN', name: 'Thành phố Hà Nội' },
+  { code: 'VN-SG', name: 'Thành phố Hồ Chí Minh' },
+  { code: 'VN-HP', name: 'Thành phố Hải Phòng' },
+  { code: 'VN-DN', name: 'Thành phố Đà Nẵng' },
+  { code: 'VN-CT', name: 'Thành phố Cần Thơ' },
+  { code: 'VN-ND', name: 'Tỉnh Nam Định' },
+  { code: 'VN-TBi', name: 'Tỉnh Thái Bình' },
+  { code: 'VN-HD', name: 'Tỉnh Hải Dương' },
+  { code: 'VN-QN', name: 'Tỉnh Quảng Ninh' },
+  { code: 'VN-TH', name: 'Tỉnh Thanh Hóa' },
+  { code: 'VN-NA', name: 'Tỉnh Nghệ An' },
+  { code: 'VN-HT', name: 'Tỉnh Hà Tĩnh' },
+  { code: 'VN-TTH', name: 'Tỉnh Thừa Thiên Huế' },
+  { code: 'VN-QNA', name: 'Tỉnh Quảng Nam' },
+  { code: 'VN-KH', name: 'Tỉnh Khánh Hòa' },
+  { code: 'VN-LD', name: 'Tỉnh Lâm Đồng' },
+  { code: 'VN-BD', name: 'Tỉnh Bình Dương' },
+  { code: 'VN-DNai', name: 'Tỉnh Đồng Nai' },
+  { code: 'VN-BRVT', name: 'Tỉnh Bà Rịa - Vũng Tàu' },
+  { code: 'VN-LA', name: 'Tỉnh Long An' },
+  { code: 'VN-TG', name: 'Tỉnh Tiền Giang' },
+  { code: 'VN-BT', name: 'Tỉnh Bến Tre' },
+  { code: 'VN-VL', name: 'Tỉnh Vĩnh Long' },
+  { code: 'VN-AG', name: 'Tỉnh An Giang' },
+  { code: 'VN-KG', name: 'Tỉnh Kiên Giang' },
+  { code: 'VN-ST', name: 'Tỉnh Sóc Trăng' },
+  { code: 'VN-CM', name: 'Tỉnh Cà Mau' },
+  { code: 'VN-HY', name: 'Tỉnh Hưng Yên' },
+  { code: 'VN-BN', name: 'Tỉnh Bắc Ninh' },
+  { code: 'VN-VP', name: 'Tỉnh Vĩnh Phúc' },
+  { code: 'VN-PT', name: 'Tỉnh Phú Thọ' },
+  { code: 'VN-TNg', name: 'Tỉnh Thái Nguyên' },
+  { code: 'VN-LS', name: 'Tỉnh Lạng Sơn' },
+  { code: 'VN-LC', name: 'Tỉnh Lào Cai' }
+];
+
 
 
 

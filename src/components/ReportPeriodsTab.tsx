@@ -27,7 +27,7 @@ import {
   Edit2,
   Trash2
 } from 'lucide-react';
-import { ReportPeriod, UserSession, FormReport, CommuneSubmission, ProvinceSubmission } from '../types';
+import { ReportPeriod, UserSession, FormReport, CommuneSubmission, ProvinceSubmission, ProvinceItem } from '../types';
 import { createDefaultFormsForPeriod, FORM_METAS } from '../mockData';
 
 interface ReportPeriodsTabProps {
@@ -46,6 +46,7 @@ interface ReportPeriodsTabProps {
   provinceSubmissions: ProvinceSubmission[];
   setProvinceSubmissions: React.Dispatch<React.SetStateAction<ProvinceSubmission[]>>;
   onAddNotification?: (content: string, type: 'info' | 'warning' | 'success' | 'alert') => void;
+  provinces: ProvinceItem[];
 }
 
 export default function ReportPeriodsTab({
@@ -64,6 +65,7 @@ export default function ReportPeriodsTab({
   provinceSubmissions,
   setProvinceSubmissions,
   onAddNotification,
+  provinces,
 }: ReportPeriodsTabProps) {
   // Navigation: state to track selected period ID to see sub-forms (Biểu 04-13)
   const [localPeriodId, setLocalPeriodId] = useState<string | null>(null);
@@ -100,7 +102,7 @@ export default function ReportPeriodsTab({
   const [showAddCommuneModal, setShowAddCommuneModal] = useState(false);
   const [newCommuneName, setNewCommuneName] = useState('');
   const [newCommuneCode, setNewCommuneCode] = useState('');
-  const [newCommuneProvince, setNewCommuneProvince] = useState('Tỉnh Đông');
+  const [newCommuneProvince, setNewCommuneProvince] = useState(() => provinces[0]?.name || 'Tỉnh Đông');
   const [newCommuneGroup, setNewCommuneGroup] = useState<'I' | 'II' | 'III'>('I');
 
   const activePeriodDetail = periods.find((p) => p.id === selectedPeriodId);
@@ -297,8 +299,8 @@ export default function ReportPeriodsTab({
     setPDeadline('2024-06-30');
     // Set initial targets (select all by default)
     const initialTargets = userSession.role === 'SUPERVISOR'
-      ? ['Tỉnh Đông', 'Tỉnh Thái Thụy', 'Tỉnh Bắc', 'Tỉnh Nam']
-      : ['Xã Bình Minh', 'Xã Thụy Xuân', 'Xã Vũ Hội', 'Xã Quang Trung', 'Xã Hồng Phong', 'Xã Tiến Đức', 'Xã An Phú'];
+      ? provinces.map(p => p.name)
+      : communes.map(c => c.name);
     setSelectedTargets(initialTargets);
 
     // Seed default & custom forms list
@@ -873,7 +875,7 @@ export default function ReportPeriodsTab({
                           setSelectedProvince(e.target.value);
                           setTablePage(1);
                         }}
-                        className="pl-8 pr-7 py-2 bg-[#f8fafc] border border-slate-200 hover:border-slate-300 focus:border-[#2563eb] rounded-lg text-xs font-bold text-slate-700 outline-none transition-all appearance-none cursor-pointer"
+                        className="pl-8 pr-7 py-2 bg-[#f8fafc] border border-slate-200 hover:border-slate-350 focus:border-[#2563eb] rounded-lg text-xs font-bold text-slate-700 outline-none transition-all appearance-none cursor-pointer"
                       >
                         <option value="all">Tất cả Vùng miền</option>
                         <option value="Đông Bắc Bộ">Đông Bắc Bộ</option>
@@ -944,7 +946,10 @@ export default function ReportPeriodsTab({
                   {isProvince && (
                     <button
                       type="button"
-                      onClick={() => setShowAddCommuneModal(true)}
+                      onClick={() => {
+                        setNewCommuneProvince(provinces[0]?.name || 'Tỉnh Đông');
+                        setShowAddCommuneModal(true);
+                      }}
                       className="px-3.5 py-2 bg-[#014285] hover:bg-[#002a54] text-white text-xs font-black rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:scale-[1.02]"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -1735,7 +1740,7 @@ export default function ReportPeriodsTab({
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-105/10 text-[#1d4ed8] text-xs font-black shrink-0">
                     2
                   </span>
-                  <span>Sau khi nộp, cán bộ thẩm định cấp Huyện sẽ phản hồi trong vòng 3-5 ngày làm việc.</span>
+                  <span>Sau khi nộp, cán bộ thẩm định cấp Tỉnh sẽ phản hồi trong vòng 3-5 ngày làm việc.</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-105/10 text-[#1d4ed8] text-xs font-black shrink-0">
@@ -1839,8 +1844,8 @@ export default function ReportPeriodsTab({
                 </label>
                 <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 max-h-36 overflow-y-auto space-y-2">
                   {(userSession.role === 'SUPERVISOR'
-                    ? ['Tỉnh Đông', 'Tỉnh Thái Thụy', 'Tỉnh Bắc', 'Tỉnh Nam']
-                    : ['Xã Bình Minh', 'Xã Thụy Xuân', 'Xã Vũ Hội', 'Xã Quang Trung', 'Xã Hồng Phong', 'Xã Tiến Đức', 'Xã An Phú']
+                    ? provinces.map(p => p.name)
+                    : communes.map(c => c.name)
                   ).map((target) => {
                     const isChecked = selectedTargets.includes(target);
                     return (
@@ -2012,8 +2017,8 @@ export default function ReportPeriodsTab({
                 </label>
                 <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 max-h-36 overflow-y-auto space-y-2">
                   {(userSession.role === 'SUPERVISOR'
-                    ? ['Tỉnh Đông', 'Tỉnh Thái Thụy', 'Tỉnh Bắc', 'Tỉnh Nam']
-                    : ['Xã Bình Minh', 'Xã Thụy Xuân', 'Xã Vũ Hội', 'Xã Quang Trung', 'Xã Hồng Phong', 'Xã Tiến Đức', 'Xã An Phú']
+                    ? provinces.map(p => p.name)
+                    : communes.map(c => c.name)
                   ).map((target) => {
                     const isChecked = selectedTargets.includes(target);
                     return (
@@ -2152,10 +2157,9 @@ export default function ReportPeriodsTab({
                   onChange={(e) => setNewCommuneProvince(e.target.value)}
                   className="w-full text-xs p-2.5 border border-slate-200 rounded-lg outline-none font-bold text-slate-800 focus:border-[#2563eb] transition-all bg-white cursor-pointer"
                 >
-                  <option value="Tỉnh Đông">Tỉnh Đông</option>
-                  <option value="Tỉnh Thái Thụy">Tỉnh Thái Thụy</option>
-                  <option value="Tỉnh Bắc">Tỉnh Bắc</option>
-                  <option value="Tỉnh Nam">Tỉnh Nam</option>
+                  {provinces.map(p => (
+                    <option key={p.code} value={p.name}>{p.name}</option>
+                  ))}
                 </select>
               </div>
 

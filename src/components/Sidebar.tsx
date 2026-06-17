@@ -106,7 +106,7 @@ export default function Sidebar({
 
     // Admin tabs
     if (item.id === 'admin_units') {
-      return role === 'SUPERVISOR' || perms.includes('manage_units');
+      return role === 'SUPERVISOR' || role === 'APPRAISER' || perms.includes('manage_units');
     }
     if (item.id === 'accounts') {
       return role === 'SUPERVISOR' || perms.includes('manage_users');
