@@ -13,13 +13,14 @@ import {
   Users,
   FileEdit,
   BarChart3,
-  BookOpen
+  BookOpen,
+  Link2
 } from 'lucide-react';
 import { UserSession } from '../types';
 
 interface SidebarProps {
-  currentTab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics' | 'documents';
-  onTabChange: (tab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics' | 'documents') => void;
+  currentTab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics' | 'documents' | 'national_integration';
+  onTabChange: (tab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics' | 'documents' | 'national_integration') => void;
   onNewReportClick: () => void;
   isSidebarOpen?: boolean;
   onClose?: () => void;
@@ -104,6 +105,12 @@ export default function Sidebar({
       label: 'Cấu hình hệ thống',
       icon: Settings,
       targetTab: 'overview' as const
+    },
+    {
+      id: 'national_integration' as const,
+      label: 'Tích hợp hệ thống',
+      icon: Link2,
+      targetTab: 'national_integration' as const
     }
   ];
 
@@ -127,10 +134,10 @@ export default function Sidebar({
       return true;
     }
     if (role === 'APPRAISER') {
-      return ['overview', 'reports_appraisal', 'periods', 'documents'].includes(item.id);
+      return ['overview', 'reports_appraisal', 'periods', 'documents', 'national_integration'].includes(item.id);
     }
     if (role === 'EDITOR') {
-      return ['overview', 'periods', 'documents'].includes(item.id);
+      return ['overview', 'periods', 'documents', 'national_integration'].includes(item.id);
     }
     return true;
   });

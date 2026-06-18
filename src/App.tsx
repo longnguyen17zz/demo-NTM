@@ -27,6 +27,7 @@ import AccountsTab from './components/AccountsTab';
 import FormDesignerTab from './components/FormDesignerTab';
 import IndicatorStatisticsTab from './components/IndicatorStatisticsTab';
 import DocumentsTab from './components/DocumentsTab';
+import NationalIntegrationTab from './components/NationalIntegrationTab';
 
 import { CriterionRow, ReportMeta, NotificationItem, ReportPeriod, FormReport, Criterion, UserSession, CommuneSubmission, ProvinceSubmission, ProvinceItem } from './types';
 import {
@@ -50,7 +51,7 @@ export default function App() {
   const [userSession, setUserSession] = useState<UserSession | null>(null);
 
   // 2. Navigation states
-  const [currentTab, setCurrentTab] = useState<'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics' | 'documents'>('overview');
+  const [currentTab, setCurrentTab] = useState<'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics' | 'documents' | 'national_integration'>('overview');
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [activeDocCode, setActiveDocCode] = useState<string | null>(null);
@@ -710,6 +711,7 @@ export default function App() {
                 <IndicatorStatisticsTab
                   userSession={userSession}
                   communes={communes}
+                  onAddNotification={addSystemNotification}
                 />
               )}
 
@@ -718,6 +720,13 @@ export default function App() {
                   activeDocCode={activeDocCode}
                   onDocCodeSelect={setActiveDocCode}
                   userSession={userSession}
+                />
+              )}
+
+              {currentTab === 'national_integration' && (
+                <NationalIntegrationTab
+                  userSession={userSession}
+                  onAddNotification={addSystemNotification}
                 />
               )}
             </>

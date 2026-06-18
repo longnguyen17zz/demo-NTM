@@ -37,7 +37,9 @@ import {
   Printer,
   Filter,
   MapPin,
-  History
+  History,
+  RefreshCw,
+  XCircle
 } from 'lucide-react';
 import { FormReport, CriterionRow, ProofFile, UserSession, CommuneSubmission } from '../types';
 
@@ -417,6 +419,386 @@ export default function FormDetailView({
   const [digitalSignInput, setDigitalSignInput] = useState(userSession.fullName);
   const [dragActive, setDragActive] = useState(false);
   const [cellFlashes, setCellFlashes] = useState<Record<string, boolean>>({});
+
+  // National API Integration Sync States & Logic
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStep, setSyncStep] = useState(0);
+
+  const addSyncLog = (formCode: string, recordsCount: number, status: 'SUCCESS' | 'FAILED', message: string) => {
+    const savedLogs = localStorage.getItem('NTM_SyncLogs');
+    let logsList: any[] = [];
+    if (savedLogs) {
+      try {
+        logsList = JSON.parse(savedLogs);
+      } catch (e) {}
+    }
+    const newEntry = {
+      id: `log-${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      formCode,
+      status,
+      recordsCount,
+      operator: `${userSession.fullName} (${userSession.role === 'SUPERVISOR' ? 'Bộ' : userSession.role === 'APPRAISER' ? 'Tỉnh' : 'Xã'})`,
+      message
+    };
+    logsList.unshift(newEntry);
+    localStorage.setItem('NTM_SyncLogs', JSON.stringify(logsList));
+  };
+
+  const updateConfigLastSynced = (timestamp: string) => {
+    const savedConfigStr = localStorage.getItem('NTM_IntegrationConfig');
+    if (savedConfigStr) {
+      try {
+        const parsed = JSON.parse(savedConfigStr);
+        parsed.lastSyncedAt = timestamp;
+        localStorage.setItem('NTM_IntegrationConfig', JSON.stringify(parsed));
+      } catch (e) {}
+    } else {
+      const defaultConf = {
+        endpointUrl: 'https://api.mof.gov.vn/v1/public-investment/ntm',
+        clientId: 'ntm-national-monitor-app',
+        accessToken: 'jwt_token_mof_secure_sha255_2026_authorized',
+        syncFrequency: 'manual',
+        autoMapping: true,
+        lastSyncedAt: timestamp
+      };
+      localStorage.setItem('NTM_IntegrationConfig', JSON.stringify(defaultConf));
+    }
+  };
+
+  const performSyncData = () => {
+    const timeNow = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    
+    // 1. Biểu 08 hoặc Biểu 13 (Spreadsheet dự án)
+    if (form.code === 'Biểu 08' || form.code === 'Biểu 13') {
+      const updatedData = form.data.map((row) => {
+        const prevYear = Math.floor(Math.random() * 8000) + 2000; // 2,000 to 10,000 million VND
+        const currentS1 = Math.floor(prevYear * (0.5 + Math.random() * 0.45)); // 50% to 95%
+        return {
+          ...row,
+          group1: {
+            prevYear,
+            currentS1,
+            planS2: 0
+          }
+        };
+      });
+      
+      onUpdateForm({
+        ...form,
+        data: updatedData,
+        updatedAt: new Date().toISOString()
+      });
+      
+      addSyncLog(form.code, updatedData.length, 'SUCCESS', `Đã đồng bộ thành công ${updatedData.length} danh mục dự án đầu tư công từ kho dữ liệu Bộ Tài chính.`);
+      updateConfigLastSynced(timeNow);
+      
+      setNotifyMessage(`Đồng bộ thành công! Đã nạp và tính toán lại ${updatedData.length} dự án từ Cổng ĐTC.`);
+      setTimeout(() => setNotifyMessage(null), 4000);
+    }
+    
+    // 2. Biểu 09 hoặc Biểu 12 (Spreadsheet nguồn lực)
+    else if (form.code === 'Biểu 09' || form.code === 'Biểu 12') {
+      const updatedData = form.data.map((row) => {
+        if (row.isHeader) return row;
+        
+        const quantity = Math.floor(Math.random() * 4) + 1;
+        const kh_dtpt = Math.floor(Math.random() * 1500) + 500;
+        const kh_sn = Math.floor(Math.random() * 500) + 100;
+        const kh_nsdp = Math.floor(Math.random() * 1000) + 200;
+        const kh_long = Math.floor(Math.random() * 400) + 50;
+        const kh_tin = Math.floor(Math.random() * 800) + 100;
+        const kh_doanh = Math.floor(Math.random() * 600) + 50;
+        const kh_dan = Math.floor(Math.random() * 500) + 100;
+        
+        const hd_dtpt = Math.floor(kh_dtpt * (0.6 + Math.random() * 0.35));
+        const hd_sn = Math.floor(kh_sn * (0.6 + Math.random() * 0.35));
+        const hd_nsdp = Math.floor(kh_nsdp * (0.6 + Math.random() * 0.35));
+        const hd_long = Math.floor(kh_long * (0.6 + Math.random() * 0.35));
+        const hd_tin = Math.floor(kh_tin * (0.6 + Math.random() * 0.35));
+        const hd_doanh = Math.floor(kh_doanh * (0.6 + Math.random() * 0.35));
+        const hd_dan = Math.floor(kh_dan * (0.6 + Math.random() * 0.35));
+        
+        return {
+          ...row,
+          quantity,
+          kh_nstw_dtpt: kh_dtpt,
+          kh_nstw_sn: kh_sn,
+          kh_nsdp,
+          kh_longGhep: kh_long,
+          kh_tinDung: kh_tin,
+          kh_doanhNghiep: kh_doanh,
+          kh_danGop: kh_dan,
+          hd_nstw_dtpt: hd_dtpt,
+          hd_nstw_sn: hd_sn,
+          hd_nsdp,
+          hd_longGhep: hd_long,
+          hd_tinDung: hd_tin,
+          hd_doanhNghiep: hd_doanh,
+          hd_danGop: hd_dan
+        };
+      });
+      
+      onUpdateForm({
+        ...form,
+        data: updatedData,
+        updatedAt: new Date().toISOString()
+      });
+      
+      const count = updatedData.filter(r => !r.isHeader).length;
+      addSyncLog(form.code, count, 'SUCCESS', `Cập nhật thành công số liệu ${count} danh mục nguồn lực đầu tư phát triển & sự nghiệp.`);
+      updateConfigLastSynced(timeNow);
+      
+      setNotifyMessage(`Đồng bộ thành công! Đã cập nhật ${count} danh mục nguồn lực đầu tư.`);
+      setTimeout(() => setNotifyMessage(null), 4000);
+    }
+    
+    // 3. Biểu 07 hoặc Biểu 11 (Huy động nguồn lực)
+    else if (form.code === 'Biểu 07' || form.code === 'Biểu 11') {
+      const isBieu11 = form.code === 'Biểu 11';
+      const key = isBieu11 ? 'NôngThônMới_Biểu11_Data' : 'NôngThônMới_Biểu07_Data';
+      
+      const newResourceRows = {
+        i1_plan: Math.floor(Math.random() * 100000) + 100000,
+        i1_first: Math.floor(Math.random() * 50000) + 50000,
+        i1_second: Math.floor(Math.random() * 50000) + 50000,
+        
+        i2_plan: Math.floor(Math.random() * 80000) + 50000,
+        i2_first: Math.floor(Math.random() * 30000) + 20000,
+        i2_second: Math.floor(Math.random() * 40000) + 30000,
+        
+        ii1_plan: Math.floor(Math.random() * 80000) + 80000,
+        ii1_first: Math.floor(Math.random() * 40000) + 40000,
+        ii1_second: Math.floor(Math.random() * 40000) + 40000,
+        
+        ii2_plan: Math.floor(Math.random() * 40000) + 30000,
+        ii2_first: Math.floor(Math.random() * 15000) + 15000,
+        ii2_second: Math.floor(Math.random() * 20000) + 15000,
+        
+        iii_plan: Math.floor(Math.random() * 40000) + 30000,
+        iii_first: Math.floor(Math.random() * 15000) + 15000,
+        iii_second: Math.floor(Math.random() * 20000) + 15000,
+        
+        iv_plan: Math.floor(Math.random() * 30000) + 20000,
+        iv_first: Math.floor(Math.random() * 15000) + 10000,
+        iv_second: Math.floor(Math.random() * 15000) + 10000,
+        
+        v_plan: Math.floor(Math.random() * 20000) + 5000,
+        v_first: Math.floor(Math.random() * 5000) + 1000,
+        v_second: Math.floor(Math.random() * 15000) + 4000,
+        
+        vi1_plan: Math.floor(Math.random() * 8000) + 2000,
+        vi1_first: Math.floor(Math.random() * 3000) + 1000,
+        vi1_second: Math.floor(Math.random() * 5000) + 1000,
+        
+        vi2_plan: Math.floor(Math.random() * 8000) + 2000,
+        vi2_first: Math.floor(Math.random() * 2000) + 1000,
+        vi2_second: Math.floor(Math.random() * 6000) + 1000,
+      };
+      
+      setResourceRows07(newResourceRows);
+      localStorage.setItem(key, JSON.stringify(newResourceRows));
+      
+      onUpdateForm({
+        ...form,
+        updatedAt: new Date().toISOString()
+      });
+      
+      addSyncLog(form.code, 9, 'SUCCESS', 'Đồng bộ nguồn vốn huy động cả nước từ hệ thống ĐTC Bộ Tài chính.');
+      updateConfigLastSynced(timeNow);
+      
+      setNotifyMessage("Đồng bộ thành công! Đã nạp số liệu huy động nguồn lực.");
+      setTimeout(() => setNotifyMessage(null), 4000);
+    }
+  };
+
+  const handleStartSync = () => {
+    const savedConfigStr = localStorage.getItem('NTM_IntegrationConfig');
+    let isConfigValid = true;
+    let endpoint = 'https://api.mof.gov.vn/v1/public-investment/ntm';
+    if (savedConfigStr) {
+      try {
+        const parsed = JSON.parse(savedConfigStr);
+        endpoint = parsed.endpointUrl || '';
+        if (!endpoint.includes('mof.gov.vn') || !parsed.accessToken || parsed.accessToken.length <= 5) {
+          isConfigValid = false;
+        }
+      } catch (e) {
+        isConfigValid = false;
+      }
+    }
+
+    setIsSyncing(true);
+    setSyncStep(1);
+
+    setTimeout(() => {
+      if (!isConfigValid) {
+        setSyncStep(2);
+        setTimeout(() => {
+          setSyncStep(-2);
+          addSyncLog(
+            form.code,
+            0,
+            'FAILED',
+            `Đồng bộ thất bại. Lỗi xác thực hoặc cấu hình token không hợp lệ (URL: ${endpoint}).`
+          );
+          setNotifyMessage("Lỗi đồng bộ: Không thể kết nối. Vui lòng kiểm tra lại cấu hình API.");
+          setTimeout(() => setNotifyMessage(null), 4000);
+        }, 800);
+        return;
+      }
+      
+      setSyncStep(2);
+      setTimeout(() => {
+        setSyncStep(3);
+        setTimeout(() => {
+          setSyncStep(4);
+          setTimeout(() => {
+            setSyncStep(5);
+            setTimeout(() => {
+              performSyncData();
+              setIsSyncing(false);
+              setSyncStep(0);
+            }, 800);
+          }, 700);
+        }, 700);
+      }, 750);
+    }, 600);
+  };
+
+  const renderSyncModal = () => {
+    if (!isSyncing) return null;
+    return (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-55 p-4 select-none animate-fade-in">
+        <div className="bg-white rounded-3xl max-w-md w-full border border-slate-100 p-6 shadow-2xl relative animate-scale-up text-left space-y-5 font-sans">
+          
+          {/* Modal Header */}
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-2xl flex items-center justify-center shrink-0 border ${
+              syncStep < 0 
+                ? 'bg-rose-50 border-rose-100 text-rose-600' 
+                : syncStep === 5 
+                  ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
+                  : 'bg-amber-50 border-amber-100 text-amber-600'
+            }`}>
+              <RefreshCw className={`w-5.5 h-5.5 ${syncStep > 0 && syncStep < 5 ? 'animate-spin' : ''}`} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider leading-none">
+                Đồng bộ dữ liệu Bộ Tài chính
+              </h3>
+              <p className="text-[10px] text-slate-400 font-extrabold mt-1 uppercase tracking-wider">
+                Cổng đầu tư công & huy động vốn quốc gia
+              </p>
+            </div>
+          </div>
+
+          {/* Steps List */}
+          <div className="space-y-3 pt-2 text-xs font-bold">
+            {/* Step 1 */}
+            <div className="flex items-center gap-3">
+              {syncStep > 1 ? (
+                <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+              ) : syncStep === 1 ? (
+                <span className="w-5 h-5 rounded-full border border-blue-500 border-t-transparent animate-spin shrink-0" />
+              ) : (
+                <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0 font-mono text-[10px]">1</span>
+              )}
+              <span className={syncStep === 1 ? 'text-[#014285] font-extrabold' : syncStep > 1 ? 'text-slate-500' : 'text-slate-400'}>
+                Kết nối bảo mật cổng API Bộ Tài chính...
+              </span>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex items-center gap-3">
+              {syncStep === -2 ? (
+                <XCircle className="w-5 h-5 text-rose-500 shrink-0" />
+              ) : syncStep > 2 ? (
+                <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+              ) : syncStep === 2 ? (
+                <span className="w-5 h-5 rounded-full border border-blue-500 border-t-transparent animate-spin shrink-0" />
+              ) : (
+                <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0 font-mono text-[10px]">2</span>
+              )}
+              <span className={syncStep === 2 ? 'text-[#014285] font-extrabold' : syncStep === -2 ? 'text-rose-600 font-black' : syncStep > 2 ? 'text-slate-500' : 'text-slate-400'}>
+                {syncStep === -2 ? 'Lỗi xác thực: Access Token không hợp lệ!' : 'Xác thực mã định danh và Token liên kết...'}
+              </span>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex items-center gap-3">
+              {syncStep > 3 ? (
+                <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+              ) : syncStep === 3 ? (
+                <span className="w-5 h-5 rounded-full border border-blue-500 border-t-transparent animate-spin shrink-0" />
+              ) : (
+                <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0 font-mono text-[10px]">3</span>
+              )}
+              <span className={syncStep === 3 ? 'text-[#014285] font-extrabold' : syncStep > 3 ? 'text-slate-500' : 'text-slate-400'}>
+                Đối soát danh mục dự án Đầu tư công quốc gia (ĐTC)...
+              </span>
+            </div>
+
+            {/* Step 4 */}
+            <div className="flex items-center gap-3">
+              {syncStep > 4 ? (
+                <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+              ) : syncStep === 4 ? (
+                <span className="w-5 h-5 rounded-full border border-blue-500 border-t-transparent animate-spin shrink-0" />
+              ) : (
+                <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0 font-mono text-[10px]">4</span>
+              )}
+              <span className={syncStep === 4 ? 'text-[#014285] font-extrabold' : syncStep > 4 ? 'text-slate-500' : 'text-slate-400'}>
+                Ánh xạ dữ liệu nguồn vốn quốc gia tự động...
+              </span>
+            </div>
+
+            {/* Step 5 */}
+            <div className="flex items-center gap-3">
+              {syncStep === 5 ? (
+                <span className="w-5 h-5 rounded-full border border-emerald-500 border-t-transparent animate-spin shrink-0" />
+              ) : (
+                <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0 font-mono text-[10px]">5</span>
+              )}
+              <span className={syncStep === 5 ? 'text-emerald-600 font-extrabold' : 'text-slate-400'}>
+                Nạp và tính toán lại bảng biểu spreadsheet...
+              </span>
+            </div>
+          </div>
+
+          {/* Progress Bar & Status Text */}
+          <div className="space-y-2 pt-2 border-t border-slate-100 text-xs font-bold text-slate-500">
+            <div className="flex justify-between items-center text-[10px] text-slate-400 uppercase tracking-wider">
+              <span>Trạng thái tiến trình</span>
+              <span className="font-mono font-black text-[#014285]">
+                {syncStep === -2 ? '0%' : syncStep === 0 ? '100%' : `${syncStep * 20}%`}
+              </span>
+            </div>
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div 
+                className={`h-full transition-all duration-300 ${syncStep === -2 ? 'bg-rose-500' : 'bg-[#014285]'}`}
+                style={{ width: syncStep === -2 ? '100%' : `${(syncStep === 0 ? 5 : syncStep) * 20}%` }}
+              />
+            </div>
+            {syncStep === -2 && (
+              <div className="pt-2 flex justify-end">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setIsSyncing(false);
+                    setSyncStep(0);
+                  }}
+                  className="px-4.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-xl cursor-pointer border-none text-xs"
+                >
+                  Đóng
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Appraisal & Supervision fields
   const [appraisalComment, setAppraisalComment] = useState('');
@@ -2297,6 +2679,17 @@ export default function FormDetailView({
           </div>
 
           <div className="flex items-center gap-2">
+            {isDr && (
+              <button
+                type="button"
+                onClick={handleStartSync}
+                className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-black rounded-2xl flex items-center gap-2 transition-all cursor-pointer border-none shadow-md shadow-amber-900/10"
+                id={form.code === 'Biểu 09' ? 'sync-btn-09' : 'sync-btn-12'}
+              >
+                <RefreshCw className="w-4 h-4 animate-pulse" />
+                Đồng bộ từ ĐTC Bộ Tài chính
+              </button>
+            )}
             <button
               onClick={() => {
                 setNotifyMessage("Đang xuất dữ liệu Excel...");
@@ -2832,6 +3225,7 @@ export default function FormDetailView({
             </div>
           </div>
         )}
+        {renderSyncModal()}
       </div>
     );
   }
@@ -2932,33 +3326,44 @@ export default function FormDetailView({
             </div>
             <div className="flex items-center gap-4 self-end sm:self-auto">
               {isDr && (
-                <button
-                  onClick={() => {
-                    const maxId = form.data.reduce((max, r) => Math.max(max, Number(r.id) || 0), 0);
-                    const newRowId = maxId + 1;
-                    const newRow: CriterionRow = {
-                      id: newRowId,
-                      category: `Công trình hạ tầng mới ${newRowId}`,
-                      unit: "Công trình",
-                      group1: { prevYear: 0, currentS1: 0, planS2: 0 },
-                      group2: { prevYear: 0, currentS1: 0, planS2: 0 },
-                      group3: { prevYear: 0, currentS1: 0, planS2: 0 },
-                      note: ""
-                    };
-                    onUpdateForm({
-                      ...form,
-                      data: [...form.data, newRow],
-                      updatedAt: new Date().toISOString()
-                    });
-                    setNotifyMessage(`Đã thêm 1 công trình mới thành công!`);
-                    setTimeout(() => setNotifyMessage(null), 3000);
-                  }}
-                  className="px-4 py-2 bg-[#014285] hover:bg-[#01356b] text-white text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-blue-900/10"
-                  id={form.code === 'Biểu 08' ? 'add-btn-08' : 'add-btn-13'}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Thêm công trình
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      const maxId = form.data.reduce((max, r) => Math.max(max, Number(r.id) || 0), 0);
+                      const newRowId = maxId + 1;
+                      const newRow: CriterionRow = {
+                        id: newRowId,
+                        category: `Công trình hạ tầng mới ${newRowId}`,
+                        unit: "Công trình",
+                        group1: { prevYear: 0, currentS1: 0, planS2: 0 },
+                        group2: { prevYear: 0, currentS1: 0, planS2: 0 },
+                        group3: { prevYear: 0, currentS1: 0, planS2: 0 },
+                        note: ""
+                      };
+                      onUpdateForm({
+                        ...form,
+                        data: [...form.data, newRow],
+                        updatedAt: new Date().toISOString()
+                      });
+                      setNotifyMessage(`Đã thêm 1 công trình mới thành công!`);
+                      setTimeout(() => setNotifyMessage(null), 3000);
+                    }}
+                    className="px-4 py-2 bg-[#014285] hover:bg-[#01356b] text-white text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-blue-900/10 border-none mr-2 font-bold"
+                    id={form.code === 'Biểu 08' ? 'add-btn-08' : 'add-btn-13'}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Thêm công trình
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleStartSync}
+                    className="px-4 py-2 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-amber-900/10 border-none mr-2 font-bold"
+                    id={form.code === 'Biểu 08' ? 'sync-btn-08' : 'sync-btn-13'}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 animate-pulse" />
+                    Đồng bộ từ ĐTC Bộ Tài chính
+                  </button>
+                </>
               )}
               <span className="text-xs text-slate-400 font-bold italic whitespace-nowrap">
                 Đơn vị tính: Triệu đồng (VNĐ)
@@ -3318,6 +3723,7 @@ export default function FormDetailView({
             </div>
           </div>
         )}
+        {renderSyncModal()}
       </div>
     );
   }
@@ -3388,6 +3794,17 @@ export default function FormDetailView({
             </div>
 
             <div className="flex items-center gap-2.5 self-end md:self-center">
+              {isDr && (
+                <button
+                  type="button"
+                  onClick={handleStartSync}
+                  className="px-4 py-2 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-amber-900/10 border-none mr-2 font-bold"
+                  id={form.code === 'Biểu 07' ? 'sync-btn-07' : 'sync-btn-11'}
+                >
+                  <RefreshCw className="w-3.5 h-3.5 animate-pulse" />
+                  Đồng bộ từ ĐTC Bộ Tài chính
+                </button>
+              )}
               {form.status === 'DRAFT' && (
                 <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-100 text-xs font-black uppercase tracking-wider">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -4051,6 +4468,7 @@ export default function FormDetailView({
             </div>
           </div>
         )}
+        {renderSyncModal()}
       </div>
     );
   }

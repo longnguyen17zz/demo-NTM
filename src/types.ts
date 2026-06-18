@@ -225,5 +225,34 @@ export interface RegulatoryDocument {
   pdfFileName?: string;
 }
 
+export interface IntegrationConfig {
+  endpointUrl: string;
+  clientId: string;
+  accessToken: string;
+  syncFrequency: 'manual' | 'daily' | 'weekly';
+  autoMapping: boolean;
+  lastSyncedAt: string | null;
+  status?: 'CONNECTED' | 'DISCONNECTED' | 'ERROR';
+}
+
+export type IntegrationSystemId = 'mof' | 'molisa' | 'cema';
+
+export interface NationalIntegrationConfigs {
+  mof: IntegrationConfig;
+  molisa: IntegrationConfig;
+  cema: IntegrationConfig;
+}
+
+export interface SyncLogEntry {
+  id: string;
+  timestamp: string;
+  formCode: string;
+  status: 'SUCCESS' | 'FAILED';
+  recordsCount: number;
+  operator: string;
+  message: string;
+  systemId?: IntegrationSystemId;
+}
+
 
 
