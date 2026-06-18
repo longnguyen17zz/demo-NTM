@@ -398,6 +398,7 @@ interface FormDetailViewProps {
   communes: CommuneSubmission[];
   activeCommuneId: string;
   onSetActiveCommuneId?: (id: string) => void;
+  onViewGuideDoc?: (docCode: string) => void;
 }
 
 export default function FormDetailView({
@@ -409,6 +410,7 @@ export default function FormDetailView({
   communes,
   activeCommuneId,
   onSetActiveCommuneId,
+  onViewGuideDoc,
 }: FormDetailViewProps) {
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null);
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
@@ -4735,10 +4737,14 @@ export default function FormDetailView({
                     href="#docs"
                     onClick={(e) => {
                       e.preventDefault();
-                      setNotifyMessage(
-                        `Xử lý tải tệp ${activeCriteria.guideDoc} hướng dẫn tiêu chí từ ban ngành...`
-                      );
-                      setTimeout(() => setNotifyMessage(null), 3000);
+                      if (onViewGuideDoc) {
+                        onViewGuideDoc(activeCriteria.guideDoc);
+                      } else {
+                        setNotifyMessage(
+                          `Xử lý tải tệp ${activeCriteria.guideDoc} hướng dẫn tiêu chí từ ban ngành...`
+                        );
+                        setTimeout(() => setNotifyMessage(null), 3000);
+                      }
                     }}
                     className="text-xs font-black text-[#10b981] hover:underline flex items-center gap-1.5 cursor-pointer inline-flex"
                   >

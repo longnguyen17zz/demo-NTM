@@ -12,13 +12,14 @@ import {
   MapPin,
   Users,
   FileEdit,
-  BarChart3
+  BarChart3,
+  BookOpen
 } from 'lucide-react';
 import { UserSession } from '../types';
 
 interface SidebarProps {
-  currentTab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics';
-  onTabChange: (tab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics') => void;
+  currentTab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics' | 'documents';
+  onTabChange: (tab: 'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics' | 'documents') => void;
   onNewReportClick: () => void;
   isSidebarOpen?: boolean;
   onClose?: () => void;
@@ -61,6 +62,12 @@ export default function Sidebar({
       label: 'Đợt báo cáo',
       icon: FileText,
       targetTab: 'reports' as const
+    },
+    {
+      id: 'documents' as const,
+      label: 'Hệ thống văn bản',
+      icon: BookOpen,
+      targetTab: 'documents' as const
     },
     {
       id: 'reports_appraisal' as const,
@@ -120,10 +127,10 @@ export default function Sidebar({
       return true;
     }
     if (role === 'APPRAISER') {
-      return ['overview', 'reports_appraisal', 'periods'].includes(item.id);
+      return ['overview', 'reports_appraisal', 'periods', 'documents'].includes(item.id);
     }
     if (role === 'EDITOR') {
-      return ['overview', 'periods'].includes(item.id);
+      return ['overview', 'periods', 'documents'].includes(item.id);
     }
     return true;
   });
@@ -186,6 +193,7 @@ export default function Sidebar({
             else if (item.id === 'accounts' && currentTab === 'accounts') isActive = true;
             else if (item.id === 'form_designer' && currentTab === 'form_designer') isActive = true;
             else if (item.id === 'indicator_statistics' && currentTab === 'indicator_statistics') isActive = true;
+            else if (item.id === 'documents' && currentTab === 'documents') isActive = true;
 
             return (
               <button

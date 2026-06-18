@@ -26,6 +26,7 @@ import AdministrativeTab from './components/AdministrativeTab';
 import AccountsTab from './components/AccountsTab';
 import FormDesignerTab from './components/FormDesignerTab';
 import IndicatorStatisticsTab from './components/IndicatorStatisticsTab';
+import DocumentsTab from './components/DocumentsTab';
 
 import { CriterionRow, ReportMeta, NotificationItem, ReportPeriod, FormReport, Criterion, UserSession, CommuneSubmission, ProvinceSubmission, ProvinceItem } from './types';
 import {
@@ -49,9 +50,10 @@ export default function App() {
   const [userSession, setUserSession] = useState<UserSession | null>(null);
 
   // 2. Navigation states
-  const [currentTab, setCurrentTab] = useState<'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics'>('overview');
+  const [currentTab, setCurrentTab] = useState<'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics' | 'documents'>('overview');
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
+  const [activeDocCode, setActiveDocCode] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Categories list state (loaded from local storage, dynamically synced)
@@ -428,6 +430,14 @@ export default function App() {
     addSystemNotification(`Đã loại bỏ tiêu chí ${targetCode} khỏi sổ tay hệ thống`, 'warning');
   };
 
+  const handleViewGuideDoc = (docCode: string) => {
+    setActiveDocCode(docCode);
+    setCurrentTab('documents');
+    setSelectedPeriodId(null);
+    setSelectedFormId(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // --- CRUD Period Handlers ---
   const handleAddPeriod = (newPeriod: ReportPeriod) => {
     const updated = [...periods, newPeriod];
@@ -602,6 +612,7 @@ export default function App() {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               onUpdateForm={handleUpdateForm}
+              onViewGuideDoc={handleViewGuideDoc}
             />
           ) : (
             <>
@@ -662,6 +673,7 @@ export default function App() {
                   periods={periods}
                   onUpdatePeriod={handleEditPeriod}
                   userSession={userSession}
+                  onViewGuideDoc={handleViewGuideDoc}
                 />
               )}
 
@@ -698,6 +710,14 @@ export default function App() {
                 <IndicatorStatisticsTab
                   userSession={userSession}
                   communes={communes}
+                />
+              )}
+
+              {currentTab === 'documents' && (
+                <DocumentsTab
+                  activeDocCode={activeDocCode}
+                  onDocCodeSelect={setActiveDocCode}
+                  userSession={userSession}
                 />
               )}
             </>

@@ -217,12 +217,14 @@ interface AppraisalTabProps {
   periods: ReportPeriod[];
   onUpdatePeriod: (updatedPeriod: ReportPeriod) => void;
   userSession: UserSession;
+  onViewGuideDoc?: (docCode: string) => void;
 }
 
 export default function AppraisalTab({
   periods,
   onUpdatePeriod,
-  userSession
+  userSession,
+  onViewGuideDoc
 }: AppraisalTabProps) {
   const [appraisalTab, setAppraisalTab] = useState<'tech' | 'finance'>('tech');
   const [searchQuery, setSearchQuery] = useState('');
@@ -875,7 +877,7 @@ export default function AppraisalTab({
                         <div className="space-y-1 text-left">
                           <span className="text-[10px] text-emerald-800 font-black uppercase tracking-wider block">Hướng dẫn kỹ thuật</span>
                           <p className="text-xs text-emerald-700 font-bold leading-relaxed">{activeCrit.guidelines}</p>
-                          <a href="#doc" onClick={(e) => { e.preventDefault(); handlePreviewFile(activeCrit.guideDoc); }} className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1 mt-1 cursor-pointer font-sans">
+                          <a href="#doc" onClick={(e) => { e.preventDefault(); if (onViewGuideDoc) { onViewGuideDoc(activeCrit.guideDoc); } else { handlePreviewFile(activeCrit.guideDoc); } }} className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1 mt-1 cursor-pointer font-sans">
                             Xem văn bản pháp chế {activeCrit.guideDoc}
                             <ExternalLink className="w-3 h-3" />
                           </a>

@@ -75,7 +75,7 @@ export interface NotificationItem {
 }
 
 export interface SidebarMenuItem {
-  id: 'overview' | 'reports' | 'criteria' | 'statistics' | 'evaluation' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics';
+  id: 'overview' | 'reports' | 'criteria' | 'statistics' | 'evaluation' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics' | 'documents';
   label: string;
   icon: string;
 }
@@ -209,5 +209,21 @@ export interface IndicatorConfig {
   description: string;
   category: string;
 }
+
+export interface RegulatoryDocument {
+  id: string;
+  code: string;
+  title: string;
+  type: string;
+  issuingAgency: string;
+  signer: string;
+  issueDate: string;
+  content: string;
+  relatedCriteria: string[];
+  fileImage?: string;
+  pdfFile?: string;
+  pdfFileName?: string;
+}
+
 
 

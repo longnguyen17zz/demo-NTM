@@ -1842,7 +1842,7 @@ export default function ReportPeriodsTab({
                 <label className="text-xs font-extrabold text-[#475569] block mb-1.5 uppercase tracking-wider">
                   {userSession.role === 'SUPERVISOR' ? 'Chọn các Tỉnh nhận yêu cầu' : 'Chọn các Xã nhận yêu cầu'}
                 </label>
-                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 max-h-36 overflow-y-auto space-y-2">
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 max-h-36 overflow-y-auto space-y-2" style={{ height: "95px" }}>
                   {(userSession.role === 'SUPERVISOR'
                     ? provinces.map(p => p.name)
                     : communes.map(c => c.name)
@@ -2015,7 +2015,7 @@ export default function ReportPeriodsTab({
                 <label className="text-xs font-extrabold text-[#475569] block mb-1.5 uppercase tracking-wider">
                   {userSession.role === 'SUPERVISOR' ? 'Chọn các Tỉnh nhận yêu cầu' : 'Chọn các Xã nhận yêu cầu'}
                 </label>
-                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 max-h-36 overflow-y-auto space-y-2">
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 max-h-36 overflow-y-auto space-y-2" style={{ height: "95px" }}>
                   {(userSession.role === 'SUPERVISOR'
                     ? provinces.map(p => p.name)
                     : communes.map(c => c.name)
