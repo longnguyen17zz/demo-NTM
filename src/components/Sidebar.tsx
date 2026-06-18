@@ -84,7 +84,7 @@ export default function Sidebar({
     },
     {
       id: 'indicator_statistics' as const,
-      label: 'Thống kê Bộ Chỉ số',
+      label: 'Thống kê Bộ chỉ số',
       icon: BarChart3,
       targetTab: 'indicator_statistics' as const
     },
@@ -134,10 +134,10 @@ export default function Sidebar({
       return true;
     }
     if (role === 'APPRAISER') {
-      return ['overview', 'reports_appraisal', 'periods', 'documents', 'national_integration'].includes(item.id);
+      return ['overview', 'reports_appraisal', 'periods', 'config'].includes(item.id);
     }
     if (role === 'EDITOR') {
-      return ['overview', 'periods', 'documents', 'national_integration'].includes(item.id);
+      return ['overview', 'periods', 'config'].includes(item.id);
     }
     return true;
   });

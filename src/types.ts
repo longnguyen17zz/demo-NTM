@@ -254,5 +254,18 @@ export interface SyncLogEntry {
   systemId?: IntegrationSystemId;
 }
 
+export interface OfflineDraft {
+  id: string;
+  communeId: string;
+  communeName: string;
+  periodId: string;
+  periodName: string;
+  formCode: string;
+  formTitle: string;
+  data: any[];
+  updatedAt: string;
+}
+
+
 
 

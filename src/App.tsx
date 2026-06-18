@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   FileText,
   HelpCircle,
@@ -9,7 +9,9 @@ import {
   FileCheck2,
   AlertTriangle,
   Award,
-  BookOpen
+  BookOpen,
+  WifiOff,
+  Download
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -28,8 +30,10 @@ import FormDesignerTab from './components/FormDesignerTab';
 import IndicatorStatisticsTab from './components/IndicatorStatisticsTab';
 import DocumentsTab from './components/DocumentsTab';
 import NationalIntegrationTab from './components/NationalIntegrationTab';
+import OfflineSyncModal from './components/OfflineSyncModal';
 
-import { CriterionRow, ReportMeta, NotificationItem, ReportPeriod, FormReport, Criterion, UserSession, CommuneSubmission, ProvinceSubmission, ProvinceItem } from './types';
+
+import { CriterionRow, ReportMeta, NotificationItem, ReportPeriod, FormReport, Criterion, UserSession, CommuneSubmission, ProvinceSubmission, ProvinceItem, OfflineDraft } from './types';
 import {
   INITIAL_CRITERIA_ROWS,
   INITIAL_CRITERIA_ROWS_06,
@@ -49,6 +53,88 @@ import {
 export default function App() {
   // 1. Session state
   const [userSession, setUserSession] = useState<UserSession | null>(null);
+
+  // Network connectivity and offline drafts states
+  const [navigatorOnline, setNavigatorOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [simulatedOffline, setSimulatedOffline] = useState(false);
+  const isOnline = navigatorOnline && !simulatedOffline;
+
+  const [showOfflineSyncModal, setShowOfflineSyncModal] = useState(false);
+  const [offlineDrafts, setOfflineDrafts] = useState<OfflineDraft[]>(() => {
+    const saved = localStorage.getItem('NTM_OfflineDrafts');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) { }
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    const handleOnline = () => setNavigatorOnline(true);
+    const handleOffline = () => setNavigatorOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const saveOfflineDraft = (draft: OfflineDraft) => {
+    setOfflineDrafts((prev) => {
+      const filtered = prev.filter(
+        (d) => !(d.communeId === draft.communeId && d.periodId === draft.periodId && d.formCode === draft.formCode)
+      );
+      const updated = [draft, ...filtered];
+      localStorage.setItem('NTM_OfflineDrafts', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const deleteOfflineDraft = (id: string) => {
+    setOfflineDrafts((prev) => {
+      const updated = prev.filter((d) => d.id !== id);
+      localStorage.setItem('NTM_OfflineDrafts', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const syncAllOfflineDrafts = () => {
+    if (offlineDrafts.length === 0) return;
+
+    // Apply drafts to period forms
+    const updatedPeriods = periods.map((p) => {
+      const pDrafts = offlineDrafts.filter((d) => d.periodId === p.id);
+      if (pDrafts.length === 0) return p;
+
+      return {
+        ...p,
+        forms: p.forms.map((f) => {
+          // Find draft matching commune, period and form
+          const fDraft = pDrafts.find((d) => d.formCode === f.code && d.communeId === activeCommuneId);
+          if (fDraft) {
+            return {
+              ...f,
+              data: fDraft.data,
+              updatedAt: fDraft.updatedAt
+            };
+          }
+          return f;
+        })
+      };
+    });
+
+    setPeriods(updatedPeriods);
+    localStorage.setItem('NTM_Periods', JSON.stringify(updatedPeriods));
+
+    addSystemNotification(`Đã đồng bộ thành công ${offlineDrafts.length} bản nháp ngoại tuyến lên hệ thống chính!`, 'success');
+    setOfflineDrafts([]);
+    localStorage.setItem('NTM_OfflineDrafts', JSON.stringify([]));
+  };
+
 
   // 2. Navigation states
   const [currentTab, setCurrentTab] = useState<'overview' | 'reports' | 'criteria' | 'statistics' | 'appraisal' | 'supervision' | 'category_criteria' | 'admin_units' | 'accounts' | 'form_designer' | 'indicator_statistics' | 'documents' | 'national_integration'>('overview');
@@ -532,14 +618,30 @@ export default function App() {
     return INITIAL_CRITERIA_ROWS;
   };
 
+  // Find the selected form if looking at form details
+  const currentSelectedPeriod = periods.find((p) => p.id === selectedPeriodId);
+  const baseSelectedForm = currentSelectedPeriod?.forms.find((f) => f.code === selectedFormId);
+
+  const currentSelectedForm = useMemo(() => {
+    if (!baseSelectedForm) return undefined;
+    const activeDraft = offlineDrafts.find(
+      (d) => d.communeId === activeCommuneId && d.periodId === selectedPeriodId && d.formCode === baseSelectedForm.code
+    );
+    if (activeDraft) {
+      return {
+        ...baseSelectedForm,
+        data: activeDraft.data,
+        updatedAt: activeDraft.updatedAt
+      };
+    }
+    return baseSelectedForm;
+  }, [baseSelectedForm, offlineDrafts, activeCommuneId, selectedPeriodId]);
+
   // Loading/Blocked views
   if (!userSession) {
     return <LoginScreen onLoginSuccess={handleLogin} />;
   }
 
-  // Find the selected form if looking at form details
-  const currentSelectedPeriod = periods.find((p) => p.id === selectedPeriodId);
-  const currentSelectedForm = currentSelectedPeriod?.forms.find((f) => f.code === selectedFormId);
 
   return (
     <div className="min-h-screen bg-[#f3f6fa] flex relative overflow-x-hidden">
@@ -591,30 +693,158 @@ export default function App() {
           onOpenHelpModal={() => setShowHelpModal(true)}
           isSidebarOpen={isSidebarOpen}
           onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+          isOnline={isOnline}
+          simulatedOffline={simulatedOffline}
+          onToggleSimulateOffline={() => setSimulatedOffline(!simulatedOffline)}
+          offlineDraftsCount={offlineDrafts.length}
+          onOpenOfflineSync={() => setShowOfflineSyncModal(true)}
         />
 
         {/* Dynamic content rendering */}
         <main className="p-8 pt-24 max-w-7xl w-full mx-auto flex-1">
           {/* If looking at a specific Form detail, suppress main tab structure and render Detail View */}
           {selectedPeriodId && selectedFormId && currentSelectedForm ? (
-            <FormDetailView
-              form={currentSelectedForm}
-              userSession={userSession}
-              communes={communes}
-              activeCommuneId={activeCommuneId}
-              onSetActiveCommuneId={setActiveCommuneId}
-              onBack={() => {
-                setSelectedFormId(null);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onBackToPeriods={() => {
-                setSelectedFormId(null);
-                setSelectedPeriodId(null);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onUpdateForm={handleUpdateForm}
-              onViewGuideDoc={handleViewGuideDoc}
-            />
+            <div className="space-y-6">
+
+              {/* Warning Banner when Offline */}
+              {!isOnline && (
+                <div className="bg-amber-50 border border-amber-250 p-4.5 rounded-3xl text-amber-850 flex items-start gap-3.5 text-xs font-bold leading-normal text-left mb-4 animate-pulse shadow-sm">
+                  <WifiOff className="w-5.5 h-5.5 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-black uppercase text-amber-900 block">Đang hoạt động Ngoại tuyến (Offline Mode)</span>
+                    <p className="font-semibold text-slate-700">
+                      Thiết bị của bạn đã ngắt kết nối Internet. Mọi chỉnh sửa trên biểu mẫu sẽ được đệm tự động vào **Bản nháp Ngoại tuyến** lưu cục bộ trên trình duyệt.
+                    </p>
+                    <p className="font-semibold text-slate-550">
+                      Bạn có thể xuất gói số liệu hiện tại dưới dạng tệp **JSON** để sao lưu hoặc chuyển đổi thiết bị nhập liệu qua ổ đĩa USB khi không có mạng.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Offline Utilities Toolbar (only for editable forms) */}
+              {(currentSelectedForm.status === 'DRAFT' || currentSelectedForm.status === 'REJECTED') && (
+                <div className="bg-white border border-slate-200 p-5 rounded-3xl flex flex-wrap justify-between items-center gap-4 shadow-sm text-left font-sans">
+                  <div className="text-xs text-slate-500 font-bold space-y-0.5">
+                    <span className="text-[#014285] font-black uppercase tracking-wider block text-[10px]">Tiện ích nhập liệu ngoại tuyến</span>
+                    <p>Cung cấp khả năng sao lưu, chuyển đổi dữ liệu qua tệp tin dự phòng khi mất mạng.</p>
+                  </div>
+
+                  <div className="flex items-center gap-2.5">
+                    {/* Import JSON file */}
+                    <label className="px-4.5 py-2.5 border border-slate-200 hover:bg-slate-55 rounded-xl text-xs font-black text-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm">
+                      <Download className="w-3.5 h-3.5 text-slate-500 rotate-180" />
+                      <span>Nhập tệp dữ liệu (.json)</span>
+                      <input
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            try {
+                              const parsed = JSON.parse(event.target?.result as string);
+                              if (parsed && parsed.formCode === currentSelectedForm.code && Array.isArray(parsed.data)) {
+                                handleUpdateForm({
+                                  ...currentSelectedForm,
+                                  data: parsed.data,
+                                  updatedAt: new Date().toISOString()
+                                });
+                                if (!isOnline) {
+                                  saveOfflineDraft({
+                                    id: `draft-${Date.now()}`,
+                                    communeId: activeCommuneId,
+                                    communeName: communes.find(c => c.id === activeCommuneId)?.name || activeCommuneId,
+                                    periodId: selectedPeriodId,
+                                    periodName: periods.find(p => p.id === selectedPeriodId)?.name || selectedPeriodId,
+                                    formCode: currentSelectedForm.code,
+                                    formTitle: currentSelectedForm.title,
+                                    data: parsed.data,
+                                    updatedAt: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                                  });
+                                }
+                                addSystemNotification(`Đã tải lên thành công dữ liệu từ file: ${file.name}`, 'success');
+                              } else {
+                                alert('Định dạng tệp tin JSON không khớp hoặc không hợp lệ cho biểu mẫu này!');
+                              }
+                            } catch (err) {
+                              alert('Không thể đọc hoặc phân tích cú pháp tệp tin JSON này!');
+                            }
+                          };
+                          reader.readAsText(file);
+                        }}
+                      />
+                    </label>
+
+                    {/* Export JSON file */}
+                    <button
+                      onClick={() => {
+                        const packageData = {
+                          formCode: currentSelectedForm.code,
+                          formTitle: currentSelectedForm.title,
+                          periodId: selectedPeriodId,
+                          communeId: activeCommuneId,
+                          data: currentSelectedForm.data,
+                          exportedAt: new Date().toISOString()
+                        };
+                        const blob = new Blob([JSON.stringify(packageData, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        const nameClean = (communes.find(c => c.id === activeCommuneId)?.name || 'Xa').replace(/\s+/g, '');
+                        a.href = url;
+                        a.download = `NTM_Offline_${currentSelectedForm.code.replace(/\s+/g, '')}_${nameClean}_${new Date().getFullYear()}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        addSystemNotification(`Đã xuất và tải về gói dữ liệu của ${currentSelectedForm.code}`, 'success');
+                      }}
+                      className="px-4.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer border-none shadow-md"
+                    >
+                      <Download className="w-3.5 h-3.5 text-white" />
+                      <span>Xuất gói dữ liệu (.json)</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <FormDetailView
+                form={currentSelectedForm}
+                userSession={userSession}
+                communes={communes}
+                activeCommuneId={activeCommuneId}
+                onSetActiveCommuneId={setActiveCommuneId}
+                onBack={() => {
+                  setSelectedFormId(null);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onBackToPeriods={() => {
+                  setSelectedFormId(null);
+                  setSelectedPeriodId(null);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onUpdateForm={(updatedForm) => {
+                  handleUpdateForm(updatedForm);
+                  if (!isOnline) {
+                    saveOfflineDraft({
+                      id: `draft-${Date.now()}`,
+                      communeId: activeCommuneId,
+                      communeName: communes.find(c => c.id === activeCommuneId)?.name || activeCommuneId,
+                      periodId: selectedPeriodId,
+                      periodName: periods.find(p => p.id === selectedPeriodId)?.name || selectedPeriodId,
+                      formCode: updatedForm.code,
+                      formTitle: updatedForm.title,
+                      data: updatedForm.data,
+                      updatedAt: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                    });
+                  }
+                }}
+                onViewGuideDoc={handleViewGuideDoc}
+                isOnline={isOnline}
+              />
+            </div>
           ) : (
             <>
               {currentTab === 'overview' && (
@@ -751,7 +981,7 @@ export default function App() {
       {/* Guide Manual Help Overlay Modal */}
       {showHelpModal && (
         <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-7 shadow-2xl border border-slate-100 animate-fade-in font-sans">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-7 shadow-2xl border border-slate-100 animate-fade-in font-sans text-left">
             <div className="flex justify-between items-start mb-5 border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-indigo-50 rounded-lg text-primary">
@@ -803,6 +1033,16 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {showOfflineSyncModal && (
+        <OfflineSyncModal
+          offlineDrafts={offlineDrafts}
+          onClose={() => setShowOfflineSyncModal(false)}
+          onDeleteDraft={deleteOfflineDraft}
+          onSyncAll={syncAllOfflineDrafts}
+          isOnline={isOnline}
+        />
       )}
     </div>
   );

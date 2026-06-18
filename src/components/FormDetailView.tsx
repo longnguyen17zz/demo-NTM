@@ -401,6 +401,7 @@ interface FormDetailViewProps {
   activeCommuneId: string;
   onSetActiveCommuneId?: (id: string) => void;
   onViewGuideDoc?: (docCode: string) => void;
+  isOnline?: boolean;
 }
 
 export default function FormDetailView({
@@ -413,6 +414,7 @@ export default function FormDetailView({
   activeCommuneId,
   onSetActiveCommuneId,
   onViewGuideDoc,
+  isOnline = true,
 }: FormDetailViewProps) {
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null);
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
@@ -613,6 +615,18 @@ export default function FormDetailView({
   };
 
   const handleStartSync = () => {
+    if (!isOnline) {
+      setIsSyncing(true);
+      setSyncStep(1);
+      setTimeout(() => {
+        setSyncStep(-2);
+        addSyncLog(form.code, 0, 'FAILED', 'Không thể kết nối đến máy chủ Bộ Tài chính khi thiết bị đang ở chế độ Ngoại tuyến.');
+        setNotifyMessage("Lỗi kết nối: Thiết bị đang ngoại tuyến.");
+        setTimeout(() => setNotifyMessage(null), 4000);
+      }, 1000);
+      return;
+    }
+
     const savedConfigStr = localStorage.getItem('NTM_IntegrationConfig');
     let isConfigValid = true;
     let endpoint = 'https://api.mof.gov.vn/v1/public-investment/ntm';
@@ -1308,6 +1322,10 @@ export default function FormDetailView({
 
   const handleConfirmSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isOnline) {
+      alert('Không thể gửi nộp báo cáo chính thức ở chế độ Ngoại tuyến. Hãy kết nối mạng để hoàn tất ký số.');
+      return;
+    }
     if (!digitalSignInput.trim()) {
       alert('Vui lòng điền họ và tên người ký xác nhận.');
       return;
