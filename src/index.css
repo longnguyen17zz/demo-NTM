@@ -36,13 +36,16 @@ body {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: #f3f3fa;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #c2c6d3;
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #727782;
 }
@@ -53,4 +56,3 @@ body {
   outline: none;
   box-shadow: 0 0 0 2px rgba(0, 59, 114, 0.1);
 }
-

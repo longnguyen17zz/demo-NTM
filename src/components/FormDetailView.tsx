@@ -432,7 +432,7 @@ export default function FormDetailView({
     if (savedLogs) {
       try {
         logsList = JSON.parse(savedLogs);
-      } catch (e) {}
+      } catch (e) { }
     }
     const newEntry = {
       id: `log-${Date.now()}`,
@@ -454,7 +454,7 @@ export default function FormDetailView({
         const parsed = JSON.parse(savedConfigStr);
         parsed.lastSyncedAt = timestamp;
         localStorage.setItem('NTM_IntegrationConfig', JSON.stringify(parsed));
-      } catch (e) {}
+      } catch (e) { }
     } else {
       const defaultConf = {
         endpointUrl: 'https://api.mof.gov.vn/v1/public-investment/ntm',
@@ -470,7 +470,7 @@ export default function FormDetailView({
 
   const performSyncData = () => {
     const timeNow = new Date().toISOString().replace('T', ' ').substring(0, 19);
-    
+
     // 1. Biểu 08 hoặc Biểu 13 (Spreadsheet dự án)
     if (form.code === 'Biểu 08' || form.code === 'Biểu 13') {
       const updatedData = form.data.map((row) => {
@@ -485,25 +485,25 @@ export default function FormDetailView({
           }
         };
       });
-      
+
       onUpdateForm({
         ...form,
         data: updatedData,
         updatedAt: new Date().toISOString()
       });
-      
+
       addSyncLog(form.code, updatedData.length, 'SUCCESS', `Đã đồng bộ thành công ${updatedData.length} danh mục dự án đầu tư công từ kho dữ liệu Bộ Tài chính.`);
       updateConfigLastSynced(timeNow);
-      
+
       setNotifyMessage(`Đồng bộ thành công! Đã nạp và tính toán lại ${updatedData.length} dự án từ Cổng ĐTC.`);
       setTimeout(() => setNotifyMessage(null), 4000);
     }
-    
+
     // 2. Biểu 09 hoặc Biểu 12 (Spreadsheet nguồn lực)
     else if (form.code === 'Biểu 09' || form.code === 'Biểu 12') {
       const updatedData = form.data.map((row) => {
         if (row.isHeader) return row;
-        
+
         const quantity = Math.floor(Math.random() * 4) + 1;
         const kh_dtpt = Math.floor(Math.random() * 1500) + 500;
         const kh_sn = Math.floor(Math.random() * 500) + 100;
@@ -512,7 +512,7 @@ export default function FormDetailView({
         const kh_tin = Math.floor(Math.random() * 800) + 100;
         const kh_doanh = Math.floor(Math.random() * 600) + 50;
         const kh_dan = Math.floor(Math.random() * 500) + 100;
-        
+
         const hd_dtpt = Math.floor(kh_dtpt * (0.6 + Math.random() * 0.35));
         const hd_sn = Math.floor(kh_sn * (0.6 + Math.random() * 0.35));
         const hd_nsdp = Math.floor(kh_nsdp * (0.6 + Math.random() * 0.35));
@@ -520,7 +520,7 @@ export default function FormDetailView({
         const hd_tin = Math.floor(kh_tin * (0.6 + Math.random() * 0.35));
         const hd_doanh = Math.floor(kh_doanh * (0.6 + Math.random() * 0.35));
         const hd_dan = Math.floor(kh_dan * (0.6 + Math.random() * 0.35));
-        
+
         return {
           ...row,
           quantity,
@@ -540,75 +540,75 @@ export default function FormDetailView({
           hd_danGop: hd_dan
         };
       });
-      
+
       onUpdateForm({
         ...form,
         data: updatedData,
         updatedAt: new Date().toISOString()
       });
-      
+
       const count = updatedData.filter(r => !r.isHeader).length;
       addSyncLog(form.code, count, 'SUCCESS', `Cập nhật thành công số liệu ${count} danh mục nguồn lực đầu tư phát triển & sự nghiệp.`);
       updateConfigLastSynced(timeNow);
-      
+
       setNotifyMessage(`Đồng bộ thành công! Đã cập nhật ${count} danh mục nguồn lực đầu tư.`);
       setTimeout(() => setNotifyMessage(null), 4000);
     }
-    
+
     // 3. Biểu 07 hoặc Biểu 11 (Huy động nguồn lực)
     else if (form.code === 'Biểu 07' || form.code === 'Biểu 11') {
       const isBieu11 = form.code === 'Biểu 11';
       const key = isBieu11 ? 'NôngThônMới_Biểu11_Data' : 'NôngThônMới_Biểu07_Data';
-      
+
       const newResourceRows = {
         i1_plan: Math.floor(Math.random() * 100000) + 100000,
         i1_first: Math.floor(Math.random() * 50000) + 50000,
         i1_second: Math.floor(Math.random() * 50000) + 50000,
-        
+
         i2_plan: Math.floor(Math.random() * 80000) + 50000,
         i2_first: Math.floor(Math.random() * 30000) + 20000,
         i2_second: Math.floor(Math.random() * 40000) + 30000,
-        
+
         ii1_plan: Math.floor(Math.random() * 80000) + 80000,
         ii1_first: Math.floor(Math.random() * 40000) + 40000,
         ii1_second: Math.floor(Math.random() * 40000) + 40000,
-        
+
         ii2_plan: Math.floor(Math.random() * 40000) + 30000,
         ii2_first: Math.floor(Math.random() * 15000) + 15000,
         ii2_second: Math.floor(Math.random() * 20000) + 15000,
-        
+
         iii_plan: Math.floor(Math.random() * 40000) + 30000,
         iii_first: Math.floor(Math.random() * 15000) + 15000,
         iii_second: Math.floor(Math.random() * 20000) + 15000,
-        
+
         iv_plan: Math.floor(Math.random() * 30000) + 20000,
         iv_first: Math.floor(Math.random() * 15000) + 10000,
         iv_second: Math.floor(Math.random() * 15000) + 10000,
-        
+
         v_plan: Math.floor(Math.random() * 20000) + 5000,
         v_first: Math.floor(Math.random() * 5000) + 1000,
         v_second: Math.floor(Math.random() * 15000) + 4000,
-        
+
         vi1_plan: Math.floor(Math.random() * 8000) + 2000,
         vi1_first: Math.floor(Math.random() * 3000) + 1000,
         vi1_second: Math.floor(Math.random() * 5000) + 1000,
-        
+
         vi2_plan: Math.floor(Math.random() * 8000) + 2000,
         vi2_first: Math.floor(Math.random() * 2000) + 1000,
         vi2_second: Math.floor(Math.random() * 6000) + 1000,
       };
-      
+
       setResourceRows07(newResourceRows);
       localStorage.setItem(key, JSON.stringify(newResourceRows));
-      
+
       onUpdateForm({
         ...form,
         updatedAt: new Date().toISOString()
       });
-      
+
       addSyncLog(form.code, 9, 'SUCCESS', 'Đồng bộ nguồn vốn huy động cả nước từ hệ thống ĐTC Bộ Tài chính.');
       updateConfigLastSynced(timeNow);
-      
+
       setNotifyMessage("Đồng bộ thành công! Đã nạp số liệu huy động nguồn lực.");
       setTimeout(() => setNotifyMessage(null), 4000);
     }
@@ -661,7 +661,7 @@ export default function FormDetailView({
         }, 800);
         return;
       }
-      
+
       setSyncStep(2);
       setTimeout(() => {
         setSyncStep(3);
@@ -685,16 +685,15 @@ export default function FormDetailView({
     return (
       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-55 p-4 select-none animate-fade-in">
         <div className="bg-white rounded-3xl max-w-md w-full border border-slate-100 p-6 shadow-2xl relative animate-scale-up text-left space-y-5 font-sans">
-          
+
           {/* Modal Header */}
           <div className="flex items-center gap-3">
-            <div className={`p-2.5 rounded-2xl flex items-center justify-center shrink-0 border ${
-              syncStep < 0 
-                ? 'bg-rose-50 border-rose-100 text-rose-600' 
-                : syncStep === 5 
-                  ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
-                  : 'bg-amber-50 border-amber-100 text-amber-600'
-            }`}>
+            <div className={`p-2.5 rounded-2xl flex items-center justify-center shrink-0 border ${syncStep < 0
+              ? 'bg-rose-50 border-rose-100 text-rose-600'
+              : syncStep === 5
+                ? 'bg-emerald-50 border-emerald-100 text-emerald-600'
+                : 'bg-amber-50 border-amber-100 text-amber-600'
+              }`}>
               <RefreshCw className={`w-5.5 h-5.5 ${syncStep > 0 && syncStep < 5 ? 'animate-spin' : ''}`} />
             </div>
             <div>
@@ -789,14 +788,14 @@ export default function FormDetailView({
               </span>
             </div>
             <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div 
+              <div
                 className={`h-full transition-all duration-300 ${syncStep === -2 ? 'bg-rose-500' : 'bg-[#014285]'}`}
                 style={{ width: syncStep === -2 ? '100%' : `${(syncStep === 0 ? 5 : syncStep) * 20}%` }}
               />
             </div>
             {syncStep === -2 && (
               <div className="pt-2 flex justify-end">
-                <button 
+                <button
                   type="button"
                   onClick={() => {
                     setIsSyncing(false);

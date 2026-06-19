@@ -314,22 +314,22 @@ export default function CriteriaTab({
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 self-end lg:self-auto">
+          <div className="flex flex-col md:flex-row items-center gap-2.5 w-full md:w-auto self-end lg:self-auto">
             <button
               onClick={handleExportConfiguration}
-              className="px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-bold text-[#475569] flex items-center gap-2 shadow-sm hover:bg-slate-50 transition-colors cursor-pointer"
+              className="px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-bold text-[#475569] flex items-center justify-center gap-2 shadow-sm hover:bg-slate-50 transition-colors cursor-pointer w-full md:w-auto whitespace-nowrap"
               title="Xuất bản ghi cấu hình định dạng JSON"
             >
-              <FileDown className="w-4 h-4 text-[#64748b]" />
+              <FileDown className="w-4 h-4 text-[#64748b] shrink-0" />
               <span>Xuất file cấu hình</span>
             </button>
 
             <button
               onClick={handleSaveAllToCloud}
-              className="px-4 py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-xs font-extrabold flex items-center gap-2 shadow-sm transition-colors cursor-pointer"
+              className="px-4 py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer w-full md:w-auto whitespace-nowrap"
               title="Ghi nhận toàn bộ thay đổi lên máy chủ trung tâm"
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-4 h-4 shrink-0" />
               <span>Lưu toàn bộ thay đổi</span>
             </button>
           </div>
@@ -436,37 +436,39 @@ export default function CriteriaTab({
             </button>
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
-            {/* Search inputs */}
-            <div className="relative w-full md:w-64">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Tìm kiếm nội dung yêu cầu..."
-                className="w-full pl-9 pr-3 py-2 bg-[#f8fafc] border border-slate-200 focus:border-[#2563eb] rounded-lg text-xs font-bold outline-none transition-all placeholder:text-slate-400"
-              />
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto shrink-0">
+            <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+              {/* Search inputs */}
+              <div className="relative flex-1 sm:w-64">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Tìm kiếm nội dung yêu cầu..."
+                  className="w-full pl-9 pr-3 py-2 bg-[#f8fafc] border border-slate-200 focus:border-[#2563eb] rounded-lg text-xs font-bold outline-none transition-all placeholder:text-slate-400"
+                />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              </div>
 
-            {/* Advanced Filters Button */}
-            <button
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className={`p-2 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors ${showAdvancedFilters ? 'bg-indigo-50 border-indigo-200 text-[#2563eb]' : 'bg-[#f8fafc] border-slate-200 text-slate-500'
-                }`}
-              title="Bộ lọc nâng cao"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-            </button>
+              {/* Advanced Filters Button */}
+              <button
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className={`p-2 border rounded-lg hover:bg-slate-50 cursor-pointer transition-colors ${showAdvancedFilters ? 'bg-indigo-50 border-indigo-200 text-[#2563eb]' : 'bg-[#f8fafc] border-slate-200 text-slate-500'
+                  }`}
+                title="Bộ lọc nâng cao"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+              </button>
+            </div>
 
             {/* Add Criterion Button */}
             {userSession.role === 'SUPERVISOR' && (
               <button
                 onClick={handleOpenAdd}
-                className="px-3.5 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                className="justify-center px-3.5 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" />
                 <span>Thêm ND tiêu chí</span>
@@ -516,7 +518,7 @@ export default function CriteriaTab({
 
         {/* Main interactive catalog Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr className="bg-[#f8fafc] text-xs font-bold text-[#475569] uppercase border-b border-slate-200 tracking-wider">
                 <th className="py-3 px-4 text-center w-16">STT</th>

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  BarChart3, FileSpreadsheet, Printer, Download, Filter, HelpCircle, 
+import {
+  BarChart3, FileSpreadsheet, Printer, Download, Filter, HelpCircle,
   ChevronRight, Calculator, CheckCircle2, XCircle, Info, RefreshCw, X, Award, AlertTriangle, Loader2
 } from 'lucide-react';
 import { UserSession, CommuneSubmission } from '../types';
@@ -30,7 +30,7 @@ export default function IndicatorStatisticsTab({
   // Filters
   const [selectedProv, setSelectedProv] = useState<string>('all');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
-  
+
   // Export Modal state
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportType, setExportType] = useState<'excel' | 'pdf'>('pdf');
@@ -50,7 +50,7 @@ export default function IndicatorStatisticsTab({
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch (e) {}
+      } catch (e) { }
     }
     return null;
   });
@@ -62,7 +62,7 @@ export default function IndicatorStatisticsTab({
       if (saved) {
         try {
           setSyncedData(JSON.parse(saved));
-        } catch (e) {}
+        } catch (e) { }
       }
     };
     window.addEventListener('storage', handleStorageChange);
@@ -151,28 +151,28 @@ export default function IndicatorStatisticsTab({
       evaluator: (coms, synced) => {
         let totalBillion = 0;
         let isSyncedFromMof = false;
-        
+
         // Try reading from synced Biểu 11 / Biểu 07 first
         const saved11 = localStorage.getItem('NôngThônMới_Biểu11_Data');
         const saved07 = localStorage.getItem('NôngThônMới_Biểu07_Data');
-        
+
         const sumBieuData = (dataStr: string | null) => {
           if (!dataStr) return 0;
           try {
             const data = JSON.parse(dataStr);
-            const sum = (data.i1_plan || 0) + (data.i2_plan || 0) + (data.ii1_plan || 0) + 
-                        (data.ii2_plan || 0) + (data.iii_plan || 0) + (data.iv_plan || 0) + 
-                        (data.v_plan || 0) + (data.vi1_plan || 0) + (data.vi2_plan || 0);
+            const sum = (data.i1_plan || 0) + (data.i2_plan || 0) + (data.ii1_plan || 0) +
+              (data.ii2_plan || 0) + (data.iii_plan || 0) + (data.iv_plan || 0) +
+              (data.v_plan || 0) + (data.vi1_plan || 0) + (data.vi2_plan || 0);
             isSyncedFromMof = true;
             return sum / 1000; // convert to Billion
           } catch (e) {
             return 0;
           }
         };
-        
+
         totalBillion += sumBieuData(saved11);
         totalBillion += sumBieuData(saved07);
-        
+
         // Also check if there's project reports data from periods (Biểu 09 or Biểu 12)
         const periodsStr = localStorage.getItem('NTM_Periods');
         if (periodsStr) {
@@ -184,10 +184,10 @@ export default function IndicatorStatisticsTab({
                   if ((f.code === 'Biểu 09' || f.code === 'Biểu 12') && Array.isArray(f.data)) {
                     f.data.forEach((row: any) => {
                       if (!row.isHeader) {
-                        const rowSum = (row.hd_nstw_dtpt || 0) + (row.hd_nstw_sn || 0) + 
-                                       (row.hd_nsdp || 0) + (row.hd_longGhep || 0) + 
-                                       (row.hd_tinDung || 0) + (row.hd_doanhNghiep || 0) + 
-                                       (row.hd_danGop || 0);
+                        const rowSum = (row.hd_nstw_dtpt || 0) + (row.hd_nstw_sn || 0) +
+                          (row.hd_nsdp || 0) + (row.hd_longGhep || 0) +
+                          (row.hd_tinDung || 0) + (row.hd_doanhNghiep || 0) +
+                          (row.hd_danGop || 0);
                         if (rowSum > 0) {
                           totalBillion += rowSum / 1000;
                           isSyncedFromMof = true;
@@ -198,13 +198,13 @@ export default function IndicatorStatisticsTab({
                 });
               }
             });
-          } catch (e) {}
+          } catch (e) { }
         }
-        
+
         if (totalBillion > 0) {
           return { value: totalBillion.toFixed(1), isPass: totalBillion >= 20.0, isSynced: isSyncedFromMof };
         }
-        
+
         if (coms.length === 0) return { value: '0.0', isPass: false, isSynced: false };
         const total = coms.reduce((acc, c) => {
           const multiplier = c.group === 'I' ? 12.5 : c.group === 'II' ? 8.2 : 4.6;
@@ -302,7 +302,7 @@ export default function IndicatorStatisticsTab({
       if (savedConfigs) {
         try {
           configs = JSON.parse(savedConfigs);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       // Check if credentials exist and match domain constraints
@@ -352,7 +352,7 @@ export default function IndicatorStatisticsTab({
               if (savedLogs) {
                 try {
                   logsList = JSON.parse(savedLogs);
-                } catch (e) {}
+                } catch (e) { }
               }
 
               const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
@@ -478,7 +478,7 @@ export default function IndicatorStatisticsTab({
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Đồng bộ dữ liệu liên thông</span>
           </button>
-          
+
           <div className="text-xs text-[#014285] font-black flex items-center gap-1.5 bg-blue-50 px-3.5 py-2 rounded-xl border border-blue-200">
             <Calculator className="w-4 h-4 animate-pulse" />
             <span>Số xã tính toán: {calculatedCommunes.length} xã</span>
@@ -498,7 +498,7 @@ export default function IndicatorStatisticsTab({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[950px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-[#0f2942] text-xs font-black uppercase tracking-wider">
                 <th className="py-4.5 px-6 w-16">STT</th>
@@ -532,11 +532,10 @@ export default function IndicatorStatisticsTab({
                     {ind.calculatedValue}
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black tracking-wide flex items-center justify-center gap-1 ${
-                      ind.isPass 
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                        : 'bg-rose-50 text-rose-700 border-rose-200'
-                    }`}>
+                    <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black tracking-wide flex items-center justify-center gap-1 ${ind.isPass
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-rose-50 text-rose-700 border-rose-200'
+                      }`}>
                       {ind.isPass ? (
                         <>
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -610,7 +609,7 @@ export default function IndicatorStatisticsTab({
               {syncStep > 0 && syncStep <= 5 && (
                 <div className="space-y-3.5 text-xs">
                   <p className="text-slate-400 font-bold">Hệ thống đang thiết lập các kết nối API song song để truy xuất dữ liệu...</p>
-                  
+
                   {/* Step 1 */}
                   <div className="flex items-center justify-between p-3 rounded-xl border transition-all bg-slate-50 border-slate-200">
                     <span className={`font-bold ${syncStep === 1 ? 'text-blue-700 font-extrabold' : syncStep > 1 ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -626,9 +625,8 @@ export default function IndicatorStatisticsTab({
                   </div>
 
                   {/* Step 2 */}
-                  <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                    syncStep === 2 ? 'bg-slate-50 border-slate-200' : 'bg-transparent border-slate-100'
-                  }`}>
+                  <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${syncStep === 2 ? 'bg-slate-50 border-slate-200' : 'bg-transparent border-slate-100'
+                    }`}>
                     <span className={`font-bold ${syncStep === 2 ? 'text-blue-700 font-extrabold' : syncStep > 2 ? 'text-slate-500' : 'text-slate-400'}`}>
                       Bước 2: Kết nối & truy vấn gói dữ liệu nghèo đa chiều & hỗ trợ đặc thù
                     </span>
@@ -642,9 +640,8 @@ export default function IndicatorStatisticsTab({
                   </div>
 
                   {/* Step 3 */}
-                  <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                    syncStep === 3 ? 'bg-slate-50 border-slate-200' : 'bg-transparent border-slate-100'
-                  }`}>
+                  <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${syncStep === 3 ? 'bg-slate-50 border-slate-200' : 'bg-transparent border-slate-100'
+                    }`}>
                     <span className={`font-bold ${syncStep === 3 ? 'text-blue-700 font-extrabold' : syncStep > 3 ? 'text-slate-500' : 'text-slate-400'}`}>
                       Bước 3: Ánh xạ dữ liệu (Auto-mapping) theo phân tổ Tỉnh
                     </span>
@@ -658,9 +655,8 @@ export default function IndicatorStatisticsTab({
                   </div>
 
                   {/* Step 4 */}
-                  <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                    syncStep === 4 ? 'bg-slate-50 border-slate-200' : 'bg-transparent border-slate-100'
-                  }`}>
+                  <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${syncStep === 4 ? 'bg-slate-50 border-slate-200' : 'bg-transparent border-slate-100'
+                    }`}>
                     <span className={`font-bold ${syncStep === 4 ? 'text-blue-700 font-extrabold' : syncStep > 4 ? 'text-slate-500' : 'text-slate-400'}`}>
                       Bước 4: Giải mã khóa JWT liên ngành & kiểm tra vẹn toàn
                     </span>
@@ -674,9 +670,8 @@ export default function IndicatorStatisticsTab({
                   </div>
 
                   {/* Step 5 */}
-                  <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                    syncStep === 5 ? 'bg-slate-50 border-slate-200' : 'bg-transparent border-slate-100'
-                  }`}>
+                  <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${syncStep === 5 ? 'bg-slate-50 border-slate-200' : 'bg-transparent border-slate-100'
+                    }`}>
                     <span className={`font-bold ${syncStep === 5 ? 'text-blue-700 font-extrabold' : 'text-slate-400'}`}>
                       Bước 5: Đồng bộ cơ sở dữ liệu và nạp kết quả chỉ số
                     </span>
@@ -756,7 +751,7 @@ export default function IndicatorStatisticsTab({
             {/* Print Preview Canvas */}
             <div className="flex-1 overflow-y-auto pr-1 p-8 bg-slate-100 border border-slate-200 rounded-xl" id="print-area">
               <div className="bg-white p-10 shadow-sm border border-slate-200 mx-auto max-w-[210mm] min-h-[297mm] text-slate-900 flex flex-col justify-between">
-                
+
                 {/* Formal header */}
                 <div>
                   <div className="flex justify-between items-start text-xs font-black uppercase text-center tracking-normal leading-relaxed">

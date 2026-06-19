@@ -451,7 +451,7 @@ export default function AppraisalTab({
     setIsAlertVisible(true);
     setTimeout(() => setIsAlertVisible(false), 3000);
   };
- 
+
   if (isViewingFullForms && activeDossier) {
     const targetPeriod = periods.find(p => p.id === activeDossier.id);
     const activeCommuneName = activeDossier.commune;
@@ -563,7 +563,7 @@ export default function AppraisalTab({
           : activeGroup === 'II' && activeCrit.group2Threshold !== undefined ? activeCrit.group2Threshold
             : activeCrit.targetPercent ?? 0;
 
-    const ratePercent = activeCrit.denominator && activeCrit.denominator > 0 
+    const ratePercent = activeCrit.denominator && activeCrit.denominator > 0
       ? ((activeCrit.numerator ?? 0) / activeCrit.denominator * 100).toFixed(1)
       : "0.0";
     const isTargetMet = Number(ratePercent) >= resolvedTargetPercent;
@@ -612,11 +612,10 @@ export default function AppraisalTab({
               <h1 className="text-xl font-black text-[#0f2942] tracking-tight">
                 Thẩm định chi tiết hồ sơ: {activeDossier.code}
               </h1>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
-                dossierStatusLabel === 'ĐÃ ĐẠT' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${dossierStatusLabel === 'ĐÃ ĐẠT' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
                 dossierStatusLabel === 'CẦN SỬA' ? 'bg-rose-50 text-rose-500 border-rose-200' :
-                'bg-amber-50 text-amber-600 border-amber-200'
-              }`}>
+                  'bg-amber-50 text-amber-600 border-amber-200'
+                }`}>
                 {dossierStatusLabel}
               </span>
             </div>
@@ -644,19 +643,17 @@ export default function AppraisalTab({
               <button
                 key={code}
                 onClick={() => setViewingFormCode(code)}
-                className={`px-5 py-3 rounded-2xl text-xs font-black transition-all border shrink-0 cursor-pointer flex items-center gap-2 border-slate-200 ${
-                  isActive
-                    ? 'bg-[#014285] border-[#014285] text-white shadow-md'
-                    : 'bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-800'
-                }`}
+                className={`px-5 py-3 rounded-2xl text-xs font-black transition-all border shrink-0 cursor-pointer flex items-center gap-2 border-slate-200 ${isActive
+                  ? 'bg-[#014285] border-[#014285] text-white shadow-md'
+                  : 'bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-800'
+                  }`}
               >
                 <FileSpreadsheet className="w-4 h-4" />
                 <span>{code}</span>
-                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${
-                  status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' :
+                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' :
                   status === 'SUBMITTED' ? 'bg-amber-100 text-amber-800' :
-                  status === 'REJECTED' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-800'
-                }`}>
+                    status === 'REJECTED' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-800'
+                  }`}>
                   {status === 'APPROVED' ? 'Đã duyệt' : status === 'SUBMITTED' ? 'Chờ duyệt' : status === 'REJECTED' ? 'Trả lại' : 'Nháp'}
                 </span>
               </button>
@@ -714,11 +711,10 @@ export default function AppraisalTab({
                         <div
                           key={c.id}
                           onClick={() => setSelectedCritId(c.id)}
-                          className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex justify-between items-center ${
-                            isActive
-                              ? 'bg-blue-50/70 border-blue-500 text-blue-900 shadow-xs ring-1 ring-blue-500/10'
-                              : 'bg-white border-slate-150 hover:bg-slate-50 text-slate-700'
-                          }`}
+                          className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex justify-between items-center ${isActive
+                            ? 'bg-blue-50/70 border-blue-500 text-blue-900 shadow-xs ring-1 ring-blue-500/10'
+                            : 'bg-white border-slate-150 hover:bg-slate-50 text-slate-700'
+                            }`}
                         >
                           <div className="min-w-0 flex-1 text-left">
                             <span className="text-[10px] text-slate-400 uppercase tracking-tight block">{c.code}</span>
@@ -794,11 +790,10 @@ export default function AppraisalTab({
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200 text-left">
                           <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Trạng thái tiêu chí</span>
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-black mt-2 ${
-                            activeCrit.isCompleted
-                              ? 'bg-emerald-55/15 text-emerald-700 border-emerald-150'
-                              : 'bg-rose-50 text-rose-700 border-rose-150'
-                          }`}>
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-black mt-2 ${activeCrit.isCompleted
+                            ? 'bg-emerald-55/15 text-emerald-700 border-emerald-150'
+                            : 'bg-rose-50 text-rose-700 border-rose-150'
+                            }`}>
                             {activeCrit.isCompleted ? (
                               <>
                                 <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
@@ -922,7 +917,7 @@ export default function AppraisalTab({
                       <td className="p-3.5 border-r border-slate-200 bg-slate-150/10">{tong_total.toLocaleString('vi-VN')}</td>
                       <td className="p-3.5 text-center font-black bg-blue-50/40 text-blue-800 text-sm font-sans">{tong_percent.toFixed(1)}%</td>
                     </tr>
-                    
+
                     {/* I. NSTW */}
                     <tr className="bg-slate-50/20 font-black text-slate-800 text-center">
                       <td className="p-3 border-r border-slate-200">I</td>
@@ -1338,30 +1333,30 @@ export default function AppraisalTab({
           </h2>
         </div>
 
-        <div className="flex items-center gap-3.5" id="stats-appraisal-block">
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 px-5 flex items-center gap-4.5 shadow-sm transition-all hover:border-slate-300">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full md:w-auto" id="stats-appraisal-block">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 px-5 flex items-center gap-4.5 shadow-sm transition-all hover:border-slate-300 w-full">
             <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
               <Folder className="w-5 h-5 fill-amber-100" />
             </div>
-            <div className="text-left">
-              <span className="text-xs font-extrabold text-[#64748b] tracking-wider uppercase block">
+            <div className="text-left min-w-0 flex-1">
+              <span className="text-xs font-extrabold text-[#64748b] tracking-wider uppercase block truncate">
                 Chờ thẩm định
               </span>
-              <span className="text-lg font-black text-slate-800 leading-tight">
+              <span className="text-sm sm:text-lg font-black text-slate-800 leading-tight block whitespace-nowrap">
                 {stats.pending} hồ sơ
               </span>
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 px-5 flex items-center gap-4.5 shadow-sm transition-all hover:border-slate-300">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 px-5 flex items-center gap-4.5 shadow-sm transition-all hover:border-slate-300 w-full">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
               <CheckCircle2 className="w-5 h-5 fill-emerald-100" />
             </div>
-            <div className="text-left">
-              <span className="text-xs font-extrabold text-[#64748b] tracking-wider uppercase block">
+            <div className="text-left min-w-0 flex-1">
+              <span className="text-xs font-extrabold text-[#64748b] tracking-wider uppercase block truncate">
                 Đã hoàn thành
               </span>
-              <span className="text-lg font-black text-slate-800 leading-tight">
+              <span className="text-sm sm:text-lg font-black text-slate-800 leading-tight block whitespace-nowrap">
                 {stats.completed} hồ sơ
               </span>
             </div>
@@ -1376,7 +1371,7 @@ export default function AppraisalTab({
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
             <div className="flex flex-col md:flex-row gap-4.5">
 
-              <div className="relative flex-1">
+              <div className="relative flex-1 w-full">
                 <Search className="w-4 h-4 text-slate-400 absolute left-4.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
@@ -1387,14 +1382,14 @@ export default function AppraisalTab({
                 />
               </div>
 
-              <div className="flex flex-col text-left gap-1 min-w-[150px]">
+              <div className="flex flex-col text-left gap-1 min-w-[150px] w-full md:w-auto">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Địa phương</label>
                 <select
                   value={selectedProvince}
                   onChange={(e) => {
                     setSelectedProvince(e.target.value);
                   }}
-                  className="bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 px-3.5 py-2.5 rounded-xl cursor-pointer focus:border-blue-500 outline-none transition-all"
+                  className="bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 px-3.5 py-2.5 rounded-xl cursor-pointer focus:border-blue-500 outline-none transition-all w-full truncate"
                 >
                   <option value="Tất cả">Tất cả tỉnh thành</option>
                   <option value="Tỉnh Ninh Bình">Tỉnh Ninh Bình</option>
@@ -1405,12 +1400,12 @@ export default function AppraisalTab({
                 </select>
               </div>
 
-              <div className="flex flex-col text-left gap-1 min-w-[160px]">
+              <div className="flex flex-col text-left gap-1 min-w-[160px] w-full md:w-auto">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Nhóm tiêu chí</label>
                 <select
                   value={selectedCriteriaGroup}
                   onChange={(e) => setSelectedCriteriaGroup(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 px-3.5 py-2.5 rounded-xl cursor-pointer focus:border-blue-500 outline-none transition-all"
+                  className="bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 px-3.5 py-2.5 rounded-xl cursor-pointer focus:border-blue-500 outline-none transition-all w-full truncate"
                 >
                   <option value="Tất cả">Tất cả tiêu chí quốc gia xây dựng NTM</option>
                   <option value="Quy hoạch">Tiêu chí 1: Quy hoạch</option>
@@ -1419,12 +1414,12 @@ export default function AppraisalTab({
                 </select>
               </div>
 
-              <div className="flex flex-col text-left gap-1 min-w-[140px]">
+              <div className="flex flex-col text-left gap-1 min-w-[140px] w-full md:w-auto">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Trạng thái</label>
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 px-3.5 py-2.5 rounded-xl cursor-pointer focus:border-blue-500 outline-none transition-all"
+                  className="bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 px-3.5 py-2.5 rounded-xl cursor-pointer focus:border-blue-500 outline-none transition-all w-full truncate"
                 >
                   <option value="Chờ thẩm định">Chờ thẩm định</option>
                   <option value="Đã đạt">Đã hoàn thành</option>
@@ -1432,14 +1427,14 @@ export default function AppraisalTab({
                 </select>
               </div>
 
-              <div className="flex items-end">
+              <div className="flex items-end w-full md:w-auto">
                 <button
                   onClick={() => {
                     setAlertConfig({ message: 'Đã kích hoạt lọc bộ đệm chỉ số theo tiêu chí mới!', type: 'info' });
                     setIsAlertVisible(true);
                     setTimeout(() => setIsAlertVisible(false), 2000);
                   }}
-                  className="bg-[#014285] hover:bg-[#01356b] active:scale-95 text-white p-3 px-5 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold cursor-pointer shadow-sm transition-all"
+                  className="bg-[#014285] hover:bg-[#01356b] active:scale-95 text-white p-3 px-5 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold cursor-pointer shadow-sm transition-all w-full md:w-auto"
                 >
                   <Filter className="w-4 h-4" />
                   <span>Lọc hồ sơ</span>
@@ -1451,7 +1446,7 @@ export default function AppraisalTab({
 
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse min-w-[750px]">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100 text-[#014285] uppercase text-xs font-black tracking-wider">
                     <th className="py-4.5 px-6 shrink-0 text-center w-[120px]">Mã hồ sơ</th>
@@ -1516,17 +1511,17 @@ export default function AppraisalTab({
                           </td>
                           <td className="py-4.5 px-6 text-center">
                             {row.status === 'CHỜ DUYỆT' && (
-                              <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-extrabold bg-amber-50 border border-amber-200 text-amber-600 tracking-wide uppercase">
+                              <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-extrabold bg-amber-50 border border-amber-200 text-amber-600 tracking-wide uppercase whitespace-nowrap">
                                 Chờ duyệt
                               </span>
                             )}
                             {row.status === 'ĐÃ ĐẠT' && (
-                              <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-extrabold bg-emerald-50 border border-emerald-200 text-emerald-600 tracking-wide uppercase">
+                              <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-extrabold bg-emerald-50 border border-emerald-200 text-emerald-600 tracking-wide uppercase whitespace-nowrap">
                                 Đã đạt
                               </span>
                             )}
                             {row.status === 'CẦN SỬA' && (
-                              <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-extrabold bg-rose-50 border border-rose-200 text-rose-500 tracking-wide uppercase">
+                              <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-extrabold bg-rose-50 border border-rose-200 text-rose-500 tracking-wide uppercase whitespace-nowrap">
                                 Cần sửa
                               </span>
                             )}
@@ -1591,21 +1586,19 @@ export default function AppraisalTab({
                         <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-205">
                           <button
                             onClick={() => setAppraisalTab('tech')}
-                            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg cursor-pointer transition-all border-none ${
-                              appraisalTab === 'tech'
-                                ? 'bg-[#014285] text-white shadow-sm'
-                                : 'text-slate-500 bg-transparent hover:text-slate-800'
-                            }`}
+                            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg cursor-pointer transition-all border-none ${appraisalTab === 'tech'
+                              ? 'bg-[#014285] text-white shadow-sm'
+                              : 'text-slate-500 bg-transparent hover:text-slate-800'
+                              }`}
                           >
                             Kỹ thuật
                           </button>
                           <button
                             onClick={() => setAppraisalTab('finance')}
-                            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg cursor-pointer transition-all border-none ${
-                              appraisalTab === 'finance'
-                                ? 'bg-[#014285] text-white shadow-sm'
-                                : 'text-slate-500 bg-transparent hover:text-slate-800'
-                            }`}
+                            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg cursor-pointer transition-all border-none ${appraisalTab === 'finance'
+                              ? 'bg-[#014285] text-white shadow-sm'
+                              : 'text-slate-500 bg-transparent hover:text-slate-800'
+                              }`}
                           >
                             Tài chính
                           </button>
@@ -1630,9 +1623,8 @@ export default function AppraisalTab({
                                         <span className="text-xs font-bold text-slate-800 truncate" title={row.category}>
                                           {row.category}
                                         </span>
-                                        <span className={`text-[9px] uppercase font-black px-1.5 py-0.5 rounded shrink-0 ${
-                                          isDone ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
-                                        }`}>
+                                        <span className={`text-[9px] uppercase font-black px-1.5 py-0.5 rounded shrink-0 ${isDone ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
+                                          }`}>
                                           {isDone ? 'Đạt' : 'Chưa đạt'}
                                         </span>
                                       </div>
@@ -1658,11 +1650,11 @@ export default function AppraisalTab({
                             {(() => {
                               const b12 = targetPeriod.forms.find(f => f.code === 'Biểu 12');
                               const b12Data = Array.isArray(b12?.data) ? b12.data : [];
-                              
+
                               const sumPlanned = b12Data.reduce((acc, row) => acc + (row.kh_nstw_dtpt + row.kh_nstw_sn + row.kh_nsdp + row.kh_longGhep + row.kh_tinDung + row.kh_doanhNghiep + row.kh_danGop || 0), 0);
                               const sumImplemented = b12Data.reduce((acc, row) => acc + (row.hd_nstw_dtpt + row.hd_nstw_sn + row.hd_nsdp + row.hd_longGhep + row.hd_tinDung + row.hd_doanhNghiep + row.hd_danGop || 0), 0);
                               const percentDisbursed = sumPlanned > 0 ? Math.round((sumImplemented / sumPlanned) * 100) : 0;
-                              
+
                               return (
                                 <div className="space-y-4">
                                   <div className="bg-[#023366] text-white p-4.5 rounded-2xl border border-slate-800 shadow-inner flex flex-col justify-between">

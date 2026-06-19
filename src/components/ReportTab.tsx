@@ -269,10 +269,10 @@ export default function ReportTab({
             <thead>
               {/* Row 1 Headers */}
               <tr className="bg-slate-50 text-slate-700 text-xs font-bold border-b border-surface-border">
-                <th className="px-3 py-4 border-r border-surface-border text-center w-12" rowSpan={2}>
+                <th className="px-3 py-4 border-r border-surface-border text-center w-12 sticky left-0 bg-slate-50 z-20" rowSpan={2}>
                   TT
                 </th>
-                <th className="px-6 py-4 border-r border-surface-border min-w-[280px]" rowSpan={2}>
+                <th className="px-6 py-4 border-r border-surface-border min-w-[280px] sticky left-12 bg-slate-50 z-20" rowSpan={2}>
                   Nội dung tiêu chí
                 </th>
                 <th className="px-4 py-4 border-r border-surface-border text-center w-20" rowSpan={2}>
@@ -310,11 +310,11 @@ export default function ReportTab({
               {reportData.map((row) => (
                 <tr key={row.id} className="hover:bg-data-logic-blue/30 transition-colors">
                   {/* TT */}
-                  <td className="px-3 py-3 text-center border-r border-surface-border font-mono text-secondary font-medium">
+                  <td className="px-3 py-3 text-center border-r border-surface-border font-mono text-secondary font-medium sticky left-0 bg-white z-10">
                     {row.id}
                   </td>
                   {/* Category content text */}
-                  <td className="px-6 py-3 border-r border-surface-border font-semibold text-slate-800">
+                  <td className="px-6 py-3 border-r border-surface-border font-semibold text-slate-800 sticky left-12 bg-white z-10 shadow-[2px_0_5px_rgba(0,0,0,0.015)]">
                     {row.category}
                   </td>
                   {/* Unit */}
@@ -444,7 +444,7 @@ export default function ReportTab({
             {/* Table bottom Total Row */}
             <tfoot>
               <tr className="bg-slate-100 font-extrabold text-xs text-slate-800 border-t border-slate-300">
-                <td className="px-6 py-4 text-right border-r border-surface-border" colSpan={3}>
+                <td className="px-6 py-4 text-right border-r border-surface-border sticky left-0 bg-slate-100 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.015)]" colSpan={3}>
                   TỔNG CỘNG
                 </td>
                 <td className="px-2 py-4 text-center border-r border-surface-border bg-primary-fixed/20">

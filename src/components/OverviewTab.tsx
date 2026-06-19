@@ -1,25 +1,25 @@
 import React, { useState } from 'react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  Legend 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
 } from 'recharts';
-import { 
-  ArrowUpRight, 
-  TrendingUp, 
-  Users, 
-  ClipboardCheck, 
-  Calendar, 
-  Download, 
-  Check, 
+import {
+  ArrowUpRight,
+  TrendingUp,
+  Users,
+  ClipboardCheck,
+  Calendar,
+  Download,
+  Check,
   Loader2,
   MapPin,
   Clock,
@@ -38,7 +38,7 @@ const CustomXAxisTick = (props: any) => {
   const value = payload.value;
   let line1 = value;
   let line2 = "";
-  
+
   if (value === 'T. Đan Phượng') { line1 = 'T. Đan'; line2 = 'Phượng'; }
   else if (value === 'T. Đông Anh') { line1 = 'T. Đông'; line2 = 'Anh'; }
   else if (value === 'T. Thanh Trì') { line1 = 'T. Thanh'; line2 = 'Trì'; }
@@ -111,7 +111,7 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
   const handleExportReport = () => {
     setDownloading(true);
     setDownloadStep(1);
-    
+
     setTimeout(() => {
       setDownloadStep(2);
       setTimeout(() => {
@@ -121,7 +121,7 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
           setDownloadStep(0);
           // Trigger actual file download download pattern
           const element = document.createElement("a");
-          const file = new Blob(["BÁO CÁO GIÁM SÁT MỨC ĐỘ HOÀN THÀNH TIÊU CHÍ NÔNG THÔN MỚI\n\nTỷ lệ đạt chuẩn toàn tỉnh: 76.7% (142/185 Xã)\nThời gian xuất bản: " + new Date().toLocaleString()], {type: 'text/plain'});
+          const file = new Blob(["BÁO CÁO GIÁM SÁT MỨC ĐỘ HOÀN THÀNH TIÊU CHÍ NÔNG THÔN MỚI\n\nTỷ lệ đạt chuẩn toàn tỉnh: 76.7% (142/185 Xã)\nThời gian xuất bản: " + new Date().toLocaleString()], { type: 'text/plain' });
           element.href = URL.createObjectURL(file);
           element.download = `Bao_Cao_Tong_Hop_NTM_${new Date().getFullYear()}.txt`;
           document.body.appendChild(element);
@@ -134,7 +134,7 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
 
   return (
     <div className="space-y-6 pb-12 font-sans select-none animate-fade-in text-[#2d3748]">
-      
+
       {/* Dynamic breadcrumb & Title header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -149,16 +149,16 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
         </div>
 
         {/* Filters and export button exactly matching mockup */}
-        <div className="flex items-center gap-3">
-          <div className="bg-white border border-[#cbd5e1] rounded-lg px-3.5 py-2.5 flex items-center gap-2 text-xs font-semibold text-[#334155] shadow-sm">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start">
+          <div className="bg-white border border-[#cbd5e1] rounded-lg px-3.5 py-2.5 flex items-center gap-2 text-xs font-semibold text-[#334155] shadow-sm flex-1 sm:flex-initial justify-center">
             <Calendar className="w-4 h-4 text-[#64748b]" />
             <span>Quý 3, 2024</span>
           </div>
 
-          <button 
+          <button
             onClick={handleExportReport}
             disabled={downloading}
-            className="bg-[#014285] hover:bg-[#00346a] text-white rounded-lg px-4 py-2.5 flex items-center gap-2 text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-95 disabled:bg-slate-400 disabled:shadow-none"
+            className="bg-[#014285] hover:bg-[#00346a] text-white rounded-lg px-4 py-2.5 flex items-center gap-2 text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-95 disabled:bg-slate-400 disabled:shadow-none flex-1 sm:flex-initial justify-center"
           >
             {downloading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -198,9 +198,9 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
                 {downloadStep >= 3 ? <Check className="w-4 h-4 text-emerald-500 font-black" /> : null}
               </div>
             </div>
-            
+
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="bg-[#014285] h-full transition-all duration-500"
                 style={{ width: `${(downloadStep / 3) * 100}%` }}
               />
@@ -210,90 +210,105 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
       )}
 
       {/* Primary KPI Stats Summary Grid (4 cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full">
+
         {/* Stat Card 1: THU NHẬP BÌNH QUÂN */}
-        <div className="bg-white rounded-xl p-5 border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition-all relative overflow-hidden group">
-          <div className="flex justify-between items-start pointer-events-none">
-            <div className="space-y-1 z-10">
-              <p className="text-xs font-bold tracking-wider text-[#64748b] uppercase">THU NHẬP BÌNH QUÂN</p>
-              <h3 className="text-2xl font-extrabold text-[#0f2942]">54.2 Tr VNĐ</h3>
+        <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#e2e8f0] hover:border-blue-200 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1.5 transition-all duration-300 relative overflow-hidden group cursor-pointer">
+          <div className="flex justify-between items-start gap-3">
+            <div className="space-y-1 z-10 min-w-0 flex-1">
+              <p className="text-[10px] sm:text-xs font-extrabold tracking-wider text-[#64748b] uppercase">THU NHẬP BÌNH QUÂN</p>
+              <h3 className="text-xl sm:text-2xl font-black text-[#0f2942] tracking-tight">54.2 Tr VNĐ</h3>
               <p className="text-xs text-emerald-600 font-extrabold flex items-center gap-1 mt-2">
                 <span>▲ +8.4%</span>
                 <span className="text-[#64748b] font-medium">so với 2023</span>
               </p>
             </div>
-            {/* Subtle graphic path */}
-            <div className="p-2.5 bg-[#edf5ff] rounded-lg text-[#014285]">
+            {/* Premium gradient icon container */}
+            <div className="p-2.5 sm:p-3 bg-gradient-to-br from-[#014285] to-[#0284c7] rounded-xl text-white shadow-[0_4px_12px_rgba(1,66,133,0.2)] group-hover:scale-110 transition-transform duration-300 shrink-0">
               <TrendingUp className="w-5 h-5" />
             </div>
           </div>
           {/* Abstract bottom decoration */}
-          <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-[#014285]/5 rounded-full group-hover:scale-125 transition-all" />
+          <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-gradient-to-br from-[#014285]/10 to-transparent rounded-full group-hover:scale-150 transition-all duration-500" />
         </div>
 
         {/* Stat Card 2: TỶ LỆ HỘ NGHÈO */}
-        <div className="bg-white rounded-xl p-5 border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition-all relative overflow-hidden group">
-          <div className="flex justify-between items-start pointer-events-none">
-            <div className="space-y-1 z-10">
-              <p className="text-xs font-bold tracking-wider text-[#64748b] uppercase">TỶ LỆ HỘ NGHÈO</p>
-              <h3 className="text-2xl font-extrabold text-[#0f2942]">1.82%</h3>
+        <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#e2e8f0] hover:border-emerald-200 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1.5 transition-all duration-300 relative overflow-hidden group cursor-pointer">
+          <div className="flex justify-between items-start gap-3">
+            <div className="space-y-1 z-10 min-w-0 flex-1">
+              <p className="text-[10px] sm:text-xs font-extrabold tracking-wider text-[#64748b] uppercase">TỶ LỆ HỘ NGHÈO</p>
+              <h3 className="text-xl sm:text-2xl font-black text-[#0f2942] tracking-tight">1.82%</h3>
               <p className="text-xs text-emerald-600 font-extrabold flex items-center gap-1 mt-2">
                 <span>▼ -0.45%</span>
                 <span className="text-[#64748b] font-medium">cải thiện</span>
               </p>
             </div>
-            <div className="p-2.5 bg-emerald-50 rounded-lg text-emerald-600">
+            {/* Premium gradient icon container */}
+            <div className="p-2.5 sm:p-3 bg-gradient-to-br from-[#10b981] to-[#059669] rounded-xl text-white shadow-[0_4px_12px_rgba(16,185,129,0.2)] group-hover:scale-110 transition-transform duration-300 shrink-0">
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-emerald-500/5 rounded-full group-hover:scale-125 transition-all" />
+          <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full group-hover:scale-150 transition-all duration-500" />
         </div>
 
         {/* Stat Card 3: TỶ LỆ NƯỚC SẠCH */}
-        <div className="bg-white rounded-xl p-5 border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition-all relative overflow-hidden group">
-          <div className="flex justify-between items-start pointer-events-none">
-            <div className="space-y-1 z-10">
-              <p className="text-xs font-bold tracking-wider text-[#64748b] uppercase">TỶ LỆ NƯỚC SẠCH</p>
-              <h3 className="text-2xl font-extrabold text-[#0f2942]">94.5%</h3>
+        <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#e2e8f0] hover:border-blue-200 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1.5 transition-all duration-300 relative overflow-hidden group cursor-pointer">
+          <div className="flex justify-between items-start gap-3">
+            <div className="space-y-1 z-10 min-w-0 flex-1">
+              <p className="text-[10px] sm:text-xs font-extrabold tracking-wider text-[#64748b] uppercase">TỶ LỆ NƯỚC SẠCH</p>
+              <h3 className="text-xl sm:text-2xl font-black text-[#0f2942] tracking-tight">94.5%</h3>
               <p className="text-xs text-emerald-600 font-extrabold flex items-center gap-1 mt-2">
                 <span>✓ Đã vượt chỉ tiêu</span>
               </p>
             </div>
-            <div className="p-2.5 bg-blue-50 rounded-lg text-blue-500">
+            {/* Premium gradient icon container */}
+            <div className="p-2.5 sm:p-3 bg-gradient-to-br from-[#3b82f6] to-[#06b6d4] rounded-xl text-white shadow-[0_4px_12px_rgba(59,130,246,0.2)] group-hover:scale-110 transition-transform duration-300 shrink-0">
               <Sprout className="w-5 h-5" />
             </div>
           </div>
-          <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-blue-500/5 rounded-full group-hover:scale-125 transition-all" />
+          <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full group-hover:scale-150 transition-all duration-500" />
         </div>
 
-        {/* Stat Card 4: XÃ ĐẠT CHUẨN NTM (Progress style card) */}
-        <div className="bg-white rounded-xl p-5 border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition-all relative overflow-hidden group">
+        {/* Stat Card 4: XÃ ĐẠT CHUẨN NTM (Progress style card with matching layout) */}
+        <div className="bg-white rounded-xl p-4 sm:p-5 border border-[#e2e8f0] hover:border-purple-200 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1.5 transition-all duration-300 relative overflow-hidden group cursor-pointer">
+          <div className="z-10 relative flex justify-between items-start gap-3 mb-3">
+            <div className="space-y-1 min-w-0 flex-1">
+              <p className="text-[10px] sm:text-xs font-extrabold tracking-wider text-[#64748b] uppercase">XÃ ĐẠT CHUẨN NTM</p>
+              <div className="flex items-baseline gap-1 mt-1 flex-wrap">
+                <h3 className="text-xl sm:text-2xl font-black text-[#0f2942] tracking-tight">142</h3>
+                <span className="text-xs font-semibold text-slate-400">/ 185 xã</span>
+              </div>
+            </div>
+            {/* Premium gradient icon container */}
+            <div className="p-2.5 sm:p-3 bg-gradient-to-br from-[#8b5cf6] to-[#6d28d9] rounded-xl text-white shadow-[0_4px_12px_rgba(139,92,246,0.2)] group-hover:scale-110 transition-transform duration-300 shrink-0">
+              <FileCheck2 className="w-5 h-5" />
+            </div>
+          </div>
+
           <div className="z-10 relative">
-            <p className="text-xs font-bold tracking-wider text-[#64748b] uppercase">XÃ ĐẠT CHUẨN NTM</p>
-            
-            <div className="flex justify-between items-center mt-1">
-              <h3 className="text-2xl font-extrabold text-[#0f2942]">142 <span className="text-sm font-semibold text-slate-400">/ 185</span></h3>
-              <span className="text-xs font-bold text-[#1d4ed8] bg-[#edf4f8] px-2 py-0.5 rounded-md border border-slate-100">76.7%</span>
+            <div className="flex justify-between items-center text-xs font-bold mb-1">
+              <span className="text-[#64748b] font-semibold">Tiến độ năm 2024</span>
+              <span className="text-[#8b5cf6] bg-[#f5f3ff] px-2 py-0.5 rounded-md border border-purple-100">76.7%</span>
             </div>
 
             {/* Standard progress bar underneath */}
-            <div className="w-full bg-[#f1f5f9] h-2.5 rounded-full overflow-hidden mt-4">
-              <div 
-                className="bg-[#10b981] h-full"
+            <div className="w-full bg-[#f1f5f9] h-2.5 rounded-full overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500"
                 style={{ width: '76.7%' }}
               />
             </div>
-            
-            <p className="text-xs text-[#64748b] mt-2 font-medium">76.7% hoàn thành kế hoạch năm 2024</p>
+
+            <p className="text-[10px] sm:text-xs text-[#64748b] mt-2 font-medium">76.7% hoàn thành kế hoạch năm</p>
           </div>
+          <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full group-hover:scale-150 transition-all duration-500" />
         </div>
 
       </div>
 
       {/* Main visual graphic sections (Grouped bar chart & Donut status chart) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Card: Recharts Grouped Bar chart */}
         <div className="bg-white p-5 rounded-xl border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.03)] lg:col-span-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4 mb-5">
@@ -317,8 +332,8 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
             </div>
           </div>
 
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[280px] w-full relative min-w-0">
+            <ResponsiveContainer width="99%" height="100%">
               <BarChart
                 data={barChartData}
                 margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
@@ -326,26 +341,26 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
                 barGap={4}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={<CustomXAxisTick />} 
-                  tickLine={false} 
+                <XAxis
+                  dataKey="name"
+                  tick={<CustomXAxisTick />}
+                  tickLine={false}
                   axisLine={{ stroke: '#cbd5e1' }}
                 />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: '#475569' }} 
-                  tickLine={false} 
-                  axisLine={false} 
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tickLine={false}
+                  axisLine={false}
                 />
-                <Tooltip 
+                <Tooltip
                   cursor={{ fill: 'rgba(226, 232, 240, 0.3)' }}
-                  contentStyle={{ 
-                    backgroundColor: '#ffffff', 
-                    borderRadius: '8px', 
-                    border: '1px solid #cbd5e1', 
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                     fontSize: '12px'
-                  }} 
+                  }}
                   labelStyle={{ fontWeight: 'bold', color: '#0f2942', marginBottom: '4px' }}
                 />
                 <Bar name="Đạt chuẩn" dataKey="datChuan" fill="#1d4ed8" radius={[3, 3, 0, 0]} />
@@ -365,8 +380,8 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
           </div>
 
           {/* Centered Donut with absolute overlay text exactly as mockup */}
-          <div className="h-44 relative flex items-center justify-center my-2">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-44 w-full relative flex items-center justify-center my-2 min-w-0">
+            <ResponsiveContainer width="99%" height="100%">
               <PieChart>
                 <Pie
                   data={donutData}
@@ -384,7 +399,7 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-            
+
             <div className="absolute text-center flex flex-col items-center pointer-events-none">
               <span className="text-2xl font-black text-[#0f2942] leading-tight">76.7%</span>
               <span className="text-xs text-slate-400 font-bold uppercase tracking-wide">Xã đạt chuẩn</span>
@@ -415,7 +430,7 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
 
       {/* Heatmap Section: Criteria Completion Matrix (Ma trận hoàn thành 47 tiêu chí) */}
       <div className="bg-white p-5 rounded-xl border border-[#e2e8f0] shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
-        
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <h3 className="text-sm font-black text-[#0f2942] tracking-tight">
@@ -456,7 +471,7 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
                 </th>
               </tr>
             </thead>
-            
+
             <tbody className="divide-y divide-[#cbd5e1]/30">
               {matrixData.map((row) => (
                 <tr key={row.district} className="hover:bg-slate-50/50 transition-colors">
@@ -492,17 +507,17 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
               </h3>
               <p className="text-xs text-slate-400 font-semibold uppercase mt-0.5 tracking-wide">Tương tác trực quan địa hình</p>
             </div>
-            
+
             <MapPin className="w-4 h-4 text-[#014285]" />
           </div>
 
           <div className="relative w-full h-[240px] bg-[#0c2e27] rounded-xl overflow-hidden flex items-center justify-center p-4 border border-[#115e4a]/20 shadow-[inner_0_2px_8px_rgba(0,0,0,0.4)] group">
-            
+
             {/* Custom SVG Drawing of premium geographic map */}
             <svg viewBox="0 0 400 240" className="w-full h-full opacity-90 transition-transform duration-700 group-hover:scale-[1.03]">
               {/* Regional outer bounding path in dark green */}
               <path d="M50 40 C70 30, 110 50, 130 30 C150 10, 190 20, 210 40 C230 60, 270 50, 290 70 C310 90, 350 110, 360 130 C370 150, 340 180, 320 200 C300 220, 240 210, 210 220 C180 230, 150 200, 120 210 Q90 220, 70 180 C50 140, 30 110, 40 80 C50 50, 30 50, 50 40 Z" fill="#0c473a" stroke="#10b981" strokeWidth="1.8" />
-              
+
               {/* Secondary district dividing lines */}
               <path d="M130 30 Q170 100 210 220" stroke="#052e25" strokeWidth="1.2" strokeDasharray="3 3" fill="none" />
               <path d="M60 160 Q180 130 360 130" stroke="#052e25" strokeWidth="1.2" strokeDasharray="3 3" fill="none" />
@@ -527,19 +542,19 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
             </svg>
 
             {/* Floating layout legend card with white background matching reference screenshot */}
-            <div className="absolute bottom-3 right-3 bg-white p-2.5 rounded-lg border border-slate-200 shadow-lg z-10 space-y-1 w-44">
-              <span className="text-xs font-bold tracking-wider text-[#0f2942] block uppercase border-b border-slate-100 pb-1">Chú dẫn bản đồ</span>
-              <div className="space-y-1 text-xs font-bold text-slate-650">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] inline-block" />
+            <div className="absolute bottom-2 sm:bottom-3 left-2 right-2 sm:left-auto sm:right-3 bg-white/95 backdrop-blur-sm p-2 sm:p-2.5 rounded-lg border border-slate-200 shadow-lg z-10 sm:w-44">
+              <span className="text-[10px] sm:text-xs font-black tracking-wider text-[#0f2942] hidden sm:block uppercase border-b border-slate-100 pb-1">Chú dẫn bản đồ</span>
+              <div className="flex sm:flex-col justify-around sm:justify-start gap-x-2 gap-y-0.5 sm:space-y-1 text-[9px] sm:text-xs font-bold text-slate-600 mt-0.5 sm:mt-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#10b981] inline-block shrink-0" />
                   <span>Đạt chuẩn (&gt;95%)</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#eab308] inline-block" />
-                  <span>Cơ bản đạt (75-95%)</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#eab308] inline-block shrink-0" />
+                  <span className="truncate">Cơ bản đạt (75-95%)</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] inline-block" />
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#ef4444] inline-block shrink-0" />
                   <span>Chưa đạt (&lt;75%)</span>
                 </div>
               </div>
@@ -556,12 +571,12 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
               </h3>
               <p className="text-xs text-slate-400 font-medium">Bản tin cập nhật số liệu tiến độ tự động hằng giờ</p>
             </div>
-            
+
             <Clock className="w-4 h-4 text-slate-400" />
           </div>
 
           <div className="space-y-3 flex-1 flex flex-col justify-center">
-            
+
             {/* Box 1: Blue highlighted notification */}
             <div className="p-3.5 bg-[#edf5ff] hover:bg-[#e1eeff] rounded-lg border-l-4 border-blue-600 transition-colors space-y-1 relative">
               <div className="flex justify-between items-start">

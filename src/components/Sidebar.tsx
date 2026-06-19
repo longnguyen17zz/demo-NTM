@@ -26,6 +26,11 @@ interface SidebarProps {
   onClose?: () => void;
   onLogout?: () => void;
   userSession: UserSession;
+  isOnline?: boolean;
+  onToggleSimulateOffline?: () => void;
+  onUpdateSession?: (session: UserSession) => void;
+  reportYear?: string;
+  onReportYearChange?: (year: string) => void;
 }
 
 export default function Sidebar({
@@ -36,6 +41,11 @@ export default function Sidebar({
   onClose,
   onLogout,
   userSession,
+  isOnline = true,
+  onToggleSimulateOffline,
+  onUpdateSession,
+  reportYear = '2024',
+  onReportYearChange,
 }: SidebarProps) {
 
   // Custom mapping of items
@@ -149,7 +159,7 @@ export default function Sidebar({
   };
 
   return (
-    <aside className={`w-64 h-screen fixed top-0 bottom-0 left-0 bg-white text-slate-800 flex flex-col justify-between pt-5 pb-5 z-50 border-r border-[#e2e8f0] shadow-[2px_0_12px_rgba(0,0,0,0.02)] select-none transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+    <aside className={`w-64 h-screen fixed top-0 bottom-0 left-0 bg-white text-slate-800 flex flex-col justify-between pt-5 pb-5 z-50 border-r border-[#e2e8f0] shadow-[2px_0_12px_rgba(0,0,0,0.02)] select-none overflow-y-auto transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
 
       <div>
@@ -217,6 +227,84 @@ export default function Sidebar({
             );
           })}
         </nav>
+ 
+        {/* Mobile-only settings panel */}
+        <div className="lg:hidden px-4 py-3.5 mx-3 my-4 bg-slate-50 border border-slate-200/50 rounded-xl space-y-3">
+          <div className="text-[10px] font-black tracking-wider text-slate-400 uppercase">
+            Thiết lập hệ thống (Mobile)
+          </div>
+          
+          {/* Year Switcher Select Input */}
+          <div className="space-y-1">
+            <label className="text-[10px] text-slate-500 font-bold">Năm báo cáo:</label>
+            <select
+              value={reportYear}
+              onChange={(e) => onReportYearChange?.(e.target.value)}
+              className="w-full text-xs font-semibold py-1.5 px-2 bg-white border border-slate-200 rounded-lg outline-none text-slate-700 cursor-pointer"
+            >
+              <option value="2024">Năm 2024</option>
+              <option value="2023">Năm 2023</option>
+              <option value="2022">Năm 2022</option>
+            </select>
+          </div>
+ 
+          {/* Quick Role Switcher Select Input */}
+          <div className="space-y-1">
+            <label className="text-[10px] text-slate-500 font-bold">Chuyển vai trò nhanh:</label>
+            <select
+              value={userSession.role}
+              onChange={(e) => {
+                const role = e.target.value as 'EDITOR' | 'APPRAISER' | 'SUPERVISOR';
+                const nameMap = {
+                  EDITOR: 'Nguyễn Văn An',
+                  APPRAISER: 'Trần Minh Thẩm',
+                  SUPERVISOR: 'Phạm Hoàng Giám'
+                };
+                const usernameMap = {
+                  EDITOR: 'canbonhaplieu',
+                  APPRAISER: 'canbothamđinh',
+                  SUPERVISOR: 'canbogiamsat'
+                };
+                onUpdateSession?.({
+                  username: usernameMap[role],
+                  fullName: nameMap[role],
+                  role: role
+                });
+              }}
+              className="w-full text-xs font-semibold py-1.5 px-2 bg-white border border-slate-200 rounded-lg outline-none text-slate-700 cursor-pointer"
+            >
+              <option value="EDITOR">Cấp Xã (Nhập liệu)</option>
+              <option value="APPRAISER">Cấp Tỉnh (Thẩm định)</option>
+              <option value="SUPERVISOR">Cấp Bộ (Giám sát)</option>
+            </select>
+          </div>
+ 
+          {/* Network Connection simulated button */}
+          {userSession.role === 'EDITOR' && (
+            <div className="pt-1">
+              <button
+                onClick={onToggleSimulateOffline}
+                className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all border ${
+                  isOnline
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-105'
+                    : 'bg-amber-50 border-amber-250 text-amber-800 hover:bg-amber-105 animate-pulse'
+                }`}
+              >
+                {isOnline ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    <span>Trạng thái: Trực tuyến</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                    <span>Trạng thái: Ngoại tuyến</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bottom spacer with info & action buttons */}

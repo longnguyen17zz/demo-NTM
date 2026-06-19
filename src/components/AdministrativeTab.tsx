@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  MapPin, Plus, Edit2, Trash2, Search, X, Check, Filter, 
+import {
+  MapPin, Plus, Edit2, Trash2, Search, X, Check, Filter,
   Building2, Globe, ShieldAlert, Award, ArrowLeft, ChevronLeft, ChevronRight,
   TrendingUp, BarChart3
 } from 'lucide-react';
@@ -103,8 +103,8 @@ export default function AdministrativeTab({
   // Filtered Communes lists
   const filteredCommunes = useMemo(() => {
     return communes.filter(c => {
-      const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            c.code.includes(searchQuery);
+      const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.code.includes(searchQuery);
       const matchesProv = selectedProvFilter === 'all' || c.province === selectedProvFilter;
       const matchesGroup = selectedGroupFilter === 'all' || c.group === selectedGroupFilter;
       return matchesSearch && matchesProv && matchesGroup;
@@ -121,8 +121,8 @@ export default function AdministrativeTab({
 
   // Filtered Provinces lists
   const filteredProvinces = useMemo(() => {
-    return provinces.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    return provinces.filter(p =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.code.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [provinces, searchQuery]);
@@ -395,21 +395,19 @@ export default function AdministrativeTab({
         <div className="flex border-b border-slate-200 bg-slate-50/50">
           <button
             onClick={() => { setActiveSubTab('communes'); setSearchQuery(''); setCurrentPage(1); }}
-            className={`px-5 py-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
-              activeSubTab === 'communes' 
-                ? 'border-[#014285] text-[#014285] bg-white font-extrabold' 
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+            className={`px-5 py-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${activeSubTab === 'communes'
+              ? 'border-[#014285] text-[#014285] bg-white font-extrabold'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
           >
             Danh sách Xã trực thuộc ({filteredCommunes.length} hiển thị)
           </button>
           <button
             onClick={() => { setActiveSubTab('provinces'); setSearchQuery(''); }}
-            className={`px-5 py-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${
-              activeSubTab === 'provinces' 
-                ? 'border-[#014285] text-[#014285] bg-white font-extrabold' 
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+            className={`px-5 py-4 text-xs font-bold border-b-2 transition-all cursor-pointer ${activeSubTab === 'provinces'
+              ? 'border-[#014285] text-[#014285] bg-white font-extrabold'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
           >
             Danh mục 34 Tỉnh ({provinces.length} cấp)
           </button>
@@ -462,7 +460,7 @@ export default function AdministrativeTab({
         {/* Content table */}
         <div className="overflow-x-auto">
           {activeSubTab === 'communes' ? (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[#0f2942] text-xs font-black uppercase tracking-wider">
                   <th className="py-4.5 px-6">Mã xã</th>
@@ -488,23 +486,22 @@ export default function AdministrativeTab({
                       <td className="py-3.5 px-6 font-bold">{c.name}</td>
                       <td className="py-3.5 px-6">{c.province}</td>
                       <td className="py-3.5 px-6">
-                        <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black tracking-wide ${getGroupBadgeColor(c.group)}`}>
+                        <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black tracking-wide whitespace-nowrap ${getGroupBadgeColor(c.group)}`}>
                           {getGroupLabel(c.group)}
                         </span>
                       </td>
-                      <td className="py-3.5 px-6">
+                      <td className="py-3.5 px-6 whitespace-nowrap">
                         {c.submitted}/{c.total} biểu mẫu
                       </td>
-                      <td className="py-3.5 px-6">
-                        <span className={`inline-block w-2 h-2 rounded-full mr-2 ${
-                          c.status === 'APPROVED' ? 'bg-emerald-500' :
+                      <td className="py-3.5 px-6 whitespace-nowrap">
+                        <span className={`inline-block w-2 h-2 rounded-full mr-2 shrink-0 ${c.status === 'APPROVED' ? 'bg-emerald-500' :
                           c.status === 'SUBMITTED' ? 'bg-blue-500' :
-                          c.status === 'REVISION' ? 'bg-rose-500' : 'bg-amber-500'
-                        }`} />
+                            c.status === 'REVISION' ? 'bg-rose-500' : 'bg-amber-500'
+                          }`} />
                         <span>{
                           c.status === 'APPROVED' ? 'Đã phê duyệt' :
-                          c.status === 'SUBMITTED' ? 'Đang thẩm định' :
-                          c.status === 'REVISION' ? 'Cần điều chỉnh' : 'Chưa gửi nộp'
+                            c.status === 'SUBMITTED' ? 'Đang thẩm định' :
+                              c.status === 'REVISION' ? 'Cần điều chỉnh' : 'Chưa gửi nộp'
                         }</span>
                       </td>
                       <td className="py-3.5 px-6 text-center">
@@ -526,7 +523,7 @@ export default function AdministrativeTab({
                             </button>
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic text-[11px]">Chỉ xem</span>
+                          <span className="text-slate-400 italic text-[11px] whitespace-nowrap">Chỉ xem</span>
                         )}
                       </td>
                     </tr>
@@ -535,7 +532,7 @@ export default function AdministrativeTab({
               </tbody>
             </table>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[#0f2942] text-xs font-black uppercase tracking-wider">
                   <th className="py-4.5 px-6">Mã tỉnh</th>
@@ -601,11 +598,10 @@ export default function AdministrativeTab({
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
-                    currentPage === page 
-                      ? 'bg-[#014285] text-white border-[#014285]' 
-                      : 'border-slate-350 text-slate-700 hover:bg-slate-200'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${currentPage === page
+                    ? 'bg-[#014285] text-white border-[#014285]'
+                    : 'border-slate-350 text-slate-700 hover:bg-slate-200'
+                    }`}
                 >
                   {page}
                 </button>
@@ -736,30 +732,30 @@ export default function AdministrativeTab({
                 <label className="text-xs font-bold text-slate-650 block mb-1.5">Phân nhóm Xã (Phân tổ đánh giá) <span className="text-red-500">*</span></label>
                 <div className="flex gap-4 p-1">
                   <label className="flex items-center gap-2 cursor-pointer font-bold">
-                    <input 
-                      type="radio" 
-                      name="grp" 
-                      checked={commGroup === 'I'} 
+                    <input
+                      type="radio"
+                      name="grp"
+                      checked={commGroup === 'I'}
                       onChange={() => setCommGroup('I')}
                       className="w-4 h-4 accent-[#014285]"
                     />
                     <span>Nhóm I (Đồng bằng)</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer font-bold">
-                    <input 
-                      type="radio" 
-                      name="grp" 
-                      checked={commGroup === 'II'} 
+                    <input
+                      type="radio"
+                      name="grp"
+                      checked={commGroup === 'II'}
                       onChange={() => setCommGroup('II')}
                       className="w-4 h-4 accent-[#014285]"
                     />
                     <span>Nhóm II (Cận nghèo)</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer font-bold">
-                    <input 
-                      type="radio" 
-                      name="grp" 
-                      checked={commGroup === 'III'} 
+                    <input
+                      type="radio"
+                      name="grp"
+                      checked={commGroup === 'III'}
                       onChange={() => setCommGroup('III')}
                       className="w-4 h-4 accent-[#014285]"
                     />

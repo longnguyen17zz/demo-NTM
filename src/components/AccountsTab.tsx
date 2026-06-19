@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  Users, Plus, Edit2, Trash2, Search, X, Check, Shield, UserCheck, 
+import {
+  Users, Plus, Edit2, Trash2, Search, X, Check, Shield, UserCheck,
   Key, Building2, Eye, EyeOff, ClipboardList, Settings, Lock, ChevronRight
 } from 'lucide-react';
 import { UserSession, AccountItem } from '../types';
@@ -42,7 +42,7 @@ export const INITIAL_ACCOUNTS: AccountItem[] = [
     role: 'SUPERVISOR',
     department: 'Phòng Công nghệ & Quản trị Hệ thống',
     permissions: [
-      'read_reports', 'edit_reports', 'appraise_reports', 
+      'read_reports', 'edit_reports', 'appraise_reports',
       'supervise_reports', 'design_forms', 'manage_users', 'manage_units'
     ]
   }
@@ -68,7 +68,7 @@ export default function AccountsTab({
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
+      } catch (e) { }
     }
     return INITIAL_ACCOUNTS;
   });
@@ -97,7 +97,7 @@ export default function AccountsTab({
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredAccounts = useMemo(() => {
-    return accounts.filter(acc => 
+    return accounts.filter(acc =>
       acc.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       acc.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       acc.department.toLowerCase().includes(searchQuery.toLowerCase())
@@ -284,29 +284,29 @@ export default function AccountsTab({
               </div>
             ) : (
               filteredAccounts.map((acc) => (
-                <div key={acc.id} className="p-4 hover:bg-slate-50/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4 transition-colors">
-                  <div className="flex items-start gap-3.5">
+                <div key={acc.id} className="p-4 hover:bg-slate-50/50 flex flex-row justify-between items-center gap-4 transition-colors min-w-0">
+                  <div className="flex items-start gap-3.5 min-w-0 flex-1">
                     <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-[#014285] shrink-0 border border-slate-200 font-black text-sm uppercase">
                       {acc.fullName.charAt(0)}
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-black text-slate-800">{acc.fullName}</span>
                         <span className="text-[10px] text-slate-400 font-bold">(@{acc.username})</span>
-                        <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-wider ${getRoleBadge(acc.role)}`}>
+                        <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-wider ${getRoleBadge(acc.role)} whitespace-nowrap shrink-0`}>
                           {getRoleName(acc.role)}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 mt-1 font-semibold flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{acc.department || 'Ban chỉ đạo'}</span>
+                        <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate block" title={acc.department || 'Ban chỉ đạo'}>{acc.department || 'Ban chỉ đạo'}</span>
                       </p>
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {acc.permissions.map(p => {
                           const meta = AVAILABLE_PERMISSIONS.find(m => m.code === p);
                           if (!meta) return null;
                           return (
-                            <span key={p} className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">
+                            <span key={p} className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold whitespace-nowrap">
                               {meta.name}
                             </span>
                           );
@@ -315,13 +315,13 @@ export default function AccountsTab({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => handleEdit(acc)}
-                      className="px-3 py-1.5 border border-slate-350 hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                      className="px-3 py-1.5 hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
                     >
                       <Edit2 className="w-3 h-3" />
-                      <span>Sửa quyền</span>
+                      {/* <span>Sửa quyền</span> */}
                     </button>
                     {acc.username !== 'admin' && (
                       <button
@@ -458,11 +458,10 @@ export default function AccountsTab({
                       <div
                         key={perm.code}
                         onClick={() => togglePermission(perm.code)}
-                        className={`p-2.5 border rounded-xl flex items-center justify-between cursor-pointer transition-all ${
-                          isChecked 
-                            ? 'bg-blue-50/50 border-[#014285] text-slate-800 font-bold' 
-                            : 'border-slate-200 text-slate-650 hover:bg-slate-50'
-                        }`}
+                        className={`p-2.5 border rounded-xl flex items-center justify-between cursor-pointer transition-all ${isChecked
+                          ? 'bg-blue-50/50 border-[#014285] text-slate-800 font-bold'
+                          : 'border-slate-200 text-slate-650 hover:bg-slate-50'
+                          }`}
                       >
                         <div className="flex-1 pr-2">
                           <div className="flex items-center gap-2">
@@ -471,9 +470,8 @@ export default function AccountsTab({
                           </div>
                           <p className="text-[10px] text-slate-450 font-medium mt-0.5">{perm.desc}</p>
                         </div>
-                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
-                          isChecked ? 'bg-[#014285] border-[#014285] text-white' : 'border-slate-300 bg-white'
-                        }`}>
+                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${isChecked ? 'bg-[#014285] border-[#014285] text-white' : 'border-slate-300 bg-white'
+                          }`}>
                           {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                         </div>
                       </div>

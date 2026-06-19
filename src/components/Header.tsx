@@ -21,6 +21,8 @@ interface HeaderProps {
   onToggleSimulateOffline?: () => void;
   offlineDraftsCount?: number;
   onOpenOfflineSync?: () => void;
+  reportYear?: string;
+  onReportYearChange?: (year: string) => void;
 }
 
 export default function Header({
@@ -40,9 +42,10 @@ export default function Header({
   onToggleSimulateOffline,
   offlineDraftsCount = 0,
   onOpenOfflineSync,
+  reportYear = '2024',
+  onReportYearChange,
 }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
-  const [reportYear, setReportYear] = useState('2024');
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -74,7 +77,7 @@ export default function Header({
         </button>
 
         {/* Search bar styled after the screenshot */}
-        <div className="relative w-50 sm:w-60 md:w-60">
+        <div className="relative w-28 sm:w-44 md:w-60 transition-all duration-305">
           <input
             id="search-input"
             value={searchQuery}
@@ -93,7 +96,7 @@ export default function Header({
             </button>
           )}
         </div>
-
+ 
         {/* Dynamic central Vietnamese administration badge */}
         <div className="hidden md:flex items-center">
           <span className="text-[#014285] text-xs lg:text-sm font-black tracking-normal uppercase select-none whitespace-nowrap">
@@ -101,17 +104,17 @@ export default function Header({
           </span>
         </div>
       </div>
-
+ 
       {/* Right controls */}
-      <div className="flex items-center gap-2.5 sm:gap-5">
-
+      <div className="flex items-center gap-2 sm:gap-5">
+ 
         {/* Network connection status indicator (Clickable to toggle simulation - Only for Cấp Xã) */}
         {userSession.role === 'EDITOR' && (
           <>
             {isOnline ? (
               <button
                 onClick={onToggleSimulateOffline}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold text-emerald-800 shadow-sm shrink-0 cursor-pointer transition-colors"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold text-emerald-800 shadow-sm shrink-0 cursor-pointer transition-colors"
                 title="Đang Trực tuyến. Click để giả lập mất kết nối (Offline)."
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
@@ -120,14 +123,14 @@ export default function Header({
             ) : (
               <button
                 onClick={onToggleSimulateOffline}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-250 rounded-lg text-xs font-bold text-amber-800 animate-pulse cursor-pointer shadow-sm shrink-0 transition-colors"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-250 rounded-lg text-xs font-bold text-amber-800 animate-pulse cursor-pointer shadow-sm shrink-0 transition-colors"
                 title="Đang Ngoại tuyến (Giả lập). Click để kết nối lại (Online)."
               >
                 <WifiOff className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <span>Ngoại tuyến</span>
               </button>
             )}
-
+ 
             {/* Sync trigger button if there are unsynced drafts */}
             {offlineDraftsCount > 0 && (
               <button
@@ -143,9 +146,9 @@ export default function Header({
             )}
           </>
         )}
-
+ 
         {/* Quick Role Switcher for Demo */}
-        <div className="relative">
+        <div className="hidden lg:block relative">
           <button
             onClick={() => setShowRoleDropdown(!showRoleDropdown)}
             className="px-2.5 sm:px-3.5 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-semibold text-[#014285] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
@@ -210,7 +213,7 @@ export default function Header({
         </div>
 
         {/* Years of reporting dropdown */}
-        <div className="relative">
+        <div className="hidden lg:block relative">
           <button
             onClick={() => setShowYearDropdown(!showYearDropdown)}
             className="px-2.5 sm:px-3.5 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 flex items-center gap-1 transition-all cursor-pointer"
@@ -225,7 +228,7 @@ export default function Header({
                 <button
                   key={year}
                   onClick={() => {
-                    setReportYear(year);
+                    onReportYearChange?.(year);
                     setShowYearDropdown(false);
                   }}
                   className="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 font-medium transition-colors cursor-pointer"

@@ -142,6 +142,7 @@ export default function App() {
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [activeDocCode, setActiveDocCode] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [reportYear, setReportYear] = useState('2024');
 
   // Categories list state (loaded from local storage, dynamically synced)
   const [categories, setCategories] = useState<string[]>(() => {
@@ -677,10 +678,15 @@ export default function App() {
           const btn = document.querySelector('[class*="bg-primary"]') as HTMLButtonElement;
           if (btn) btn.click();
         }}
+        isOnline={isOnline}
+        onToggleSimulateOffline={() => setSimulatedOffline(!simulatedOffline)}
+        onUpdateSession={handleUpdateSession}
+        reportYear={reportYear}
+        onReportYearChange={setReportYear}
       />
 
       {/* Primary content side screen wrapper */}
-      <div className="flex-1 pl-0 lg:pl-64 flex flex-col min-h-screen transition-all duration-300">
+      <div className="flex-1 pl-0 lg:pl-64 flex flex-col min-h-screen transition-all duration-300 min-w-0">
         <Header
           userSession={userSession}
           onUpdateSession={handleUpdateSession}
@@ -698,10 +704,12 @@ export default function App() {
           onToggleSimulateOffline={() => setSimulatedOffline(!simulatedOffline)}
           offlineDraftsCount={offlineDrafts.length}
           onOpenOfflineSync={() => setShowOfflineSyncModal(true)}
+          reportYear={reportYear}
+          onReportYearChange={setReportYear}
         />
 
         {/* Dynamic content rendering */}
-        <main className="p-8 pt-24 max-w-7xl w-full mx-auto flex-1">
+        <main className="p-8 pt-24 max-w-7xl w-full mx-auto flex-1 min-w-0">
           {/* If looking at a specific Form detail, suppress main tab structure and render Detail View */}
           {selectedPeriodId && selectedFormId && currentSelectedForm ? (
             <div className="space-y-6">
