@@ -3341,7 +3341,7 @@ export default function FormDetailView({
                 {form.title}
               </h3>
             </div>
-            <div className="flex items-center gap-4 self-end sm:self-auto">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-start sm:justify-end mt-2 sm:mt-0">
               {isDr && (
                 <>
                   <button
@@ -3365,7 +3365,7 @@ export default function FormDetailView({
                       setNotifyMessage(`Đã thêm 1 công trình mới thành công!`);
                       setTimeout(() => setNotifyMessage(null), 3000);
                     }}
-                    className="px-4 py-2 bg-[#014285] hover:bg-[#01356b] text-white text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-blue-900/10 border-none mr-2 font-bold"
+                    className="px-4 py-2 bg-[#014285] hover:bg-[#01356b] text-white text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-blue-900/10 border-none mr-2 font-bold whitespace-nowrap"
                     id={form.code === 'Biểu 08' ? 'add-btn-08' : 'add-btn-13'}
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -3374,7 +3374,7 @@ export default function FormDetailView({
                   <button
                     type="button"
                     onClick={handleStartSync}
-                    className="px-4 py-2 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-amber-900/10 border-none mr-2 font-bold"
+                    className="px-4 py-2 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-amber-900/10 border-none mr-2 font-bold whitespace-nowrap"
                     id={form.code === 'Biểu 08' ? 'sync-btn-08' : 'sync-btn-13'}
                   >
                     <RefreshCw className="w-3.5 h-3.5 animate-pulse" />
