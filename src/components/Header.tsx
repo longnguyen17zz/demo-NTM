@@ -256,7 +256,7 @@ export default function Header({
 
           {/* Notif box dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 mt-3.5 w-[360px] bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] border border-slate-200 py-2 z-50 animate-fade-in">
+            <div className="absolute right-[-48px] sm:right-0 mt-3.5 w-[calc(100vw-32px)] sm:w-[360px] bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] border border-slate-200 py-2 z-50 animate-fade-in">
               <div className="px-4 py-2.5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <span className="text-xs font-extrabold uppercase text-slate-800 tracking-wider">Hoạt động Giám sát</span>
                 {unreadCount > 0 && (

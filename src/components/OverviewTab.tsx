@@ -165,7 +165,7 @@ export default function OverviewTab({ onGoToReport }: OverviewTabProps) {
             ) : (
               <Download className="w-4 h-4" />
             )}
-            <span>{downloading ? "Đang xuất..." : "Xuất báo cáo tổng hợp"}</span>
+            <span>{downloading ? "Đang xuất..." : "Xuất BCTH"}</span>
           </button>
         </div>
       </div>
