@@ -1,4 +1,5 @@
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = process.env.VITE_API_URL || 'http://localhost:5000/api';
+// const API_BASE = 'http://localhost:5000/api';
 
 function getHeaders(token?: string) {
   const headers: HeadersInit = {
