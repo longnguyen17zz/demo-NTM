@@ -1,5 +1,7 @@
-const API_BASE = process.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = (import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api';
 // const API_BASE = 'http://localhost:5000/api';
+
+console.log('API_BASE', API_BASE);
 
 function getHeaders(token?: string) {
   const headers: HeadersInit = {
