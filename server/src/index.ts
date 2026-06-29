@@ -16,8 +16,10 @@ const PORT = process.env.PORT || 3000;
 
 // Enable CORS for frontend requests
 app.use(cors({
-  origin: '*', // Hoặc điền chính xác link domain Frontend của bạn sau khi deploy xong
-  credentials: true
+  origin: 'https://demo-ntm-ui.onrender.com', // Điền chính xác domain FE của bạn trên Render
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
