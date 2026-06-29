@@ -15,7 +15,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Enable CORS for frontend requests
-app.use(cors());
+app.use(cors({
+  origin: '*', // Hoặc điền chính xác link domain Frontend của bạn sau khi deploy xong
+  credentials: true
+}));
 app.use(express.json());
 
 // Serve uploaded proof documents statically
