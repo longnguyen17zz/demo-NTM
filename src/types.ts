@@ -142,10 +142,13 @@ export interface ReportPeriod {
 }
 
 export interface UserSession {
+  id?: string;
   username: string;
   fullName: string;
   role: 'EDITOR' | 'APPRAISER' | 'SUPERVISOR';
   permissions?: string[];
+  token?: string;
+  unitCode?: string;
 }
 
 export interface CommuneSubmission {

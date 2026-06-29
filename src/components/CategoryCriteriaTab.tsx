@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { api } from '../services/api';
 import {
   ClipboardList,
   Trash2,
@@ -67,13 +68,22 @@ export default function CategoryCriteriaTab({
   const totalMappedCriteria = criteria.length;
   const emptyCategories = categoriesWithCriteria.filter(c => c.count === 0).length;
 
-  const handleAddCategory = (e: React.FormEvent) => {
+  const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = categoryName.trim();
     if (!trimmed) return;
     if (categories.includes(trimmed)) {
       alert('Danh mục này đã tồn tại!');
       return;
+    }
+    // Gọi API lưu vào Database
+    if (userSession.token) {
+      try {
+        await api.createCategory(userSession.token, trimmed);
+      } catch (err: any) {
+        console.error('createCategory API error:', err);
+        triggerToast(`Lỗi kết nối Database: ${err.message}. Danh mục lưu tạm ở trình duyệt.`);
+      }
     }
     setCategories([...categories, trimmed]);
     setCategoryName('');
@@ -87,7 +97,7 @@ export default function CategoryCriteriaTab({
     setShowEditModal(true);
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = categoryName.trim();
     if (!trimmed || editIndex === null) return;
@@ -101,26 +111,33 @@ export default function CategoryCriteriaTab({
       return;
     }
 
-    // Update categories array
+    // Gọi API cập nhật tên danh mục lên Database (backend tự cascade cập nhật Criterion)
+    if (userSession.token) {
+      try {
+        await api.updateCategory(userSession.token, oldName, trimmed);
+      } catch (err: any) {
+        console.error('updateCategory API error:', err);
+        triggerToast(`Lỗi kết nối Database: ${err.message}. Thay đổi lưu tạm ở trình duyệt.`);
+      }
+    }
+
+    // Update local state
     const updated = [...categories];
     updated[editIndex] = trimmed;
     setCategories(updated);
 
-    // Update parent categories in localStorage NTM_Criteria or sync by modifying criterion objects if they match old name
+    // Sync localStorage cache
     const savedCriteria = localStorage.getItem('NTM_Criteria');
     if (savedCriteria) {
       try {
         const parsed = JSON.parse(savedCriteria) as Criterion[];
         const updatedCriteria = parsed.map(c => c.category === oldName ? { ...c, category: trimmed } : c);
         localStorage.setItem('NTM_Criteria', JSON.stringify(updatedCriteria));
-        // Note: For live state update, page reload or state handler will update App.tsx's state.
-        // Let's reload App criteria list via localstorage sync or just notify that it's updated on cloud.
       } catch (err) {
         console.error(err);
       }
     }
 
-    // Also update NTM_Periods forms category column to keep matching counts in reports
     const savedPeriods = localStorage.getItem('NTM_Periods');
     if (savedPeriods) {
       try {
@@ -141,10 +158,10 @@ export default function CategoryCriteriaTab({
     setShowEditModal(false);
     setEditIndex(null);
     setCategoryName('');
-    triggerToast(`Đã thay đổi tên danh mục từ "${oldName}" thành "${trimmed}". Hãy tải lại trang để đồng bộ hoàn toàn bộ tiêu chí.`);
+    triggerToast(`Đã đổi tên danh mục "${oldName}" → "${trimmed}" và đồng bộ lên Database.`);
   };
 
-  const handleDeleteCategory = (index: number, name: string) => {
+  const handleDeleteCategory = async (index: number, name: string) => {
     const childrenCount = criteria.filter(c => c.category === name).length;
     if (childrenCount > 0) {
       if (!window.confirm(`Danh mục "${name}" đang có ${childrenCount} tiêu chí trực thuộc. Nếu xóa danh mục này, các tiêu chí con sẽ chuyển về danh mục "Chưa phân loại". Bạn có chắc chắn muốn xóa?`)) {
@@ -156,7 +173,17 @@ export default function CategoryCriteriaTab({
       }
     }
 
-    // Re-assign criteria categories
+    // Gọi API xóa danh mục khỏi Database (backend tự cascade criteria về "Chưa phân loại")
+    if (userSession.token) {
+      try {
+        await api.deleteCategory(userSession.token, name);
+      } catch (err: any) {
+        console.error('deleteCategory API error:', err);
+        triggerToast(`Lỗi kết nối Database: ${err.message}. Thay đổi lưu tạm ở trình duyệt.`);
+      }
+    }
+
+    // Sync localStorage cache
     const savedCriteria = localStorage.getItem('NTM_Criteria');
     if (savedCriteria) {
       try {
@@ -168,19 +195,15 @@ export default function CategoryCriteriaTab({
       }
     }
 
-    // Update categories
+    // Update local state
     const updated = categories.filter((_, idx) => idx !== index);
-    // If deleted everything, fallback to at least one category to prevent breaks
-    if (updated.length === 0) {
-      updated.push('Chưa phân loại');
-    }
-    // Add "Chưa phân loại" to list if we deleted a category that was holding children, to make it displayable
+    if (updated.length === 0) updated.push('Chưa phân loại');
     if (childrenCount > 0 && !updated.includes('Chưa phân loại')) {
       updated.push('Chưa phân loại');
     }
 
     setCategories(updated);
-    triggerToast(`Đã xóa danh mục "${name}" thành công.`);
+    triggerToast(`Đã xóa danh mục "${name}" và đồng bộ lên Database thành công.`);
   };
 
   const toggleCategoryExpand = (name: string) => {

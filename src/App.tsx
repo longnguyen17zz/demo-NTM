@@ -1,3 +1,4 @@
+import { api } from './services/api';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   FileText,
@@ -53,6 +54,7 @@ import {
 export default function App() {
   // 1. Session state
   const [userSession, setUserSession] = useState<UserSession | null>(null);
+  const [isDbConnected, setIsDbConnected] = useState(false);
 
   // Network connectivity and offline drafts states
   const [navigatorOnline, setNavigatorOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -621,10 +623,25 @@ export default function App() {
     }));
   };
 
-  const handleLogin = (session: UserSession) => {
+  const handleLogin = async (session: UserSession) => {
     setUserSession(session);
     localStorage.setItem('NTM_UserSession', JSON.stringify(session));
     setCurrentTab('overview');
+
+    // Load danh mục tiêu chí từ Neon Postgres ngay sau khi đăng nhập
+    if (session.token) {
+      try {
+        const dbCategories = await api.getCategories(session.token);
+        if (Array.isArray(dbCategories) && dbCategories.length > 0) {
+          setCategories(dbCategories);
+          localStorage.setItem('NTM_Categories', JSON.stringify(dbCategories));
+          setIsDbConnected(true);
+        }
+      } catch (err) {
+        console.warn('Không thể load danh mục từ DB, giữ dữ liệu cục bộ:', err);
+        setIsDbConnected(false);
+      }
+    }
   };
 
   const handleLogout = () => {
@@ -657,8 +674,23 @@ export default function App() {
   };
 
   // --- CRUD Criteria Handlers ---
-  const handleAddCriterion = (newC: Criterion) => {
-    const updated = [...criteria, newC];
+  const handleAddCriterion = async (newC: Criterion) => {
+    let finalC = { ...newC };
+    if (userSession && userSession.token) {
+      try {
+        const res = await api.createCriterion(userSession.token, newC);
+        if (res.criterion) {
+          finalC = {
+            ...newC,
+            id: res.criterion.id
+          };
+        }
+      } catch (err) {
+        console.error('Failed to save new criterion in DB:', err);
+        addSystemNotification('Lỗi lưu CSDL. Tiêu chí mới lưu tạm tại trình duyệt.', 'warning');
+      }
+    }
+    const updated = [...criteria, finalC];
     setCriteria(updated);
     localStorage.setItem('NTM_Criteria', JSON.stringify(updated));
 
@@ -689,7 +721,27 @@ export default function App() {
     addSystemNotification(`Đã ban hành tiêu chí kiểm chuẩn mới: ${newC.code} - ${newC.title}`, 'success');
   };
 
-  const handleEditCriterion = (updatedC: Criterion) => {
+  const handleEditCriterion = async (updatedC: Criterion) => {
+    if (userSession && userSession.token) {
+      try {
+        await api.updateCriterion(userSession.token, updatedC.id, {
+          code: updatedC.code,
+          title: updatedC.title,
+          description: updatedC.description,
+          indicator: updatedC.indicator,
+          weight: updatedC.weight,
+          category: updatedC.category,
+          thresholdType: updatedC.thresholdType,
+          group1Threshold: updatedC.group1Threshold,
+          group2Threshold: updatedC.group2Threshold,
+          group3Threshold: updatedC.group3Threshold,
+          proofs: updatedC.proofs
+        });
+      } catch (err) {
+        console.error('Failed to update criterion in DB:', err);
+        addSystemNotification('Lỗi đồng bộ CSDL. Thay đổi được lưu tạm tại trình duyệt.', 'warning');
+      }
+    }
     const updated = criteria.map((c) => (c.id === updatedC.id ? updatedC : c));
     setCriteria(updated);
     localStorage.setItem('NTM_Criteria', JSON.stringify(updated));
@@ -717,11 +769,21 @@ export default function App() {
     addSystemNotification(`Đã điều chỉnh nội dung tiêu chí: ${updatedC.code}`, 'info');
   };
 
-  const handleDeleteCriterion = (id: string) => {
+  const handleDeleteCriterion = async (id: string) => {
     const targetIdx = criteria.findIndex((c) => c.id === id);
     if (targetIdx === -1) return;
 
     const targetCode = criteria[targetIdx].code;
+    
+    if (userSession && userSession.token) {
+      try {
+        await api.deleteCriterion(userSession.token, id);
+      } catch (err) {
+        console.error('Failed to delete criterion in DB:', err);
+        addSystemNotification('Lỗi xóa tiêu chí trên CSDL. Thay đổi lưu tạm tại trình duyệt.', 'warning');
+      }
+    }
+
     const updated = criteria.filter((c) => c.id !== id);
     setCriteria(updated);
     localStorage.setItem('NTM_Criteria', JSON.stringify(updated));
@@ -783,7 +845,7 @@ export default function App() {
   };
 
   // --- Form specific modification handler ---
-  const handleUpdateForm = (updatedForm: FormReport) => {
+  const handleUpdateForm = async (updatedForm: FormReport) => {
     if (!selectedPeriodId) return;
 
     const updatedPeriods = periods.map((p) => {
@@ -798,6 +860,22 @@ export default function App() {
 
     setPeriods(updatedPeriods);
     localStorage.setItem('NTM_Periods', JSON.stringify(updatedPeriods));
+
+    if (userSession && userSession.token) {
+      try {
+        const unitCode = userSession.unitCode || activeCommuneId;
+        await api.saveSubmission(userSession.token, {
+          periodId: selectedPeriodId,
+          formCode: updatedForm.code,
+          unitCode,
+          data: updatedForm.data,
+          status: updatedForm.status
+        });
+      } catch (err) {
+        console.error('Failed to save submission to backend:', err);
+        addSystemNotification('Lỗi đồng bộ báo cáo lên CSDL. Thay đổi được lưu tạm tại trình duyệt.', 'warning');
+      }
+    }
 
     // Automatically trigger corresponding notifications for status changes
     if (updatedForm.status === 'SUBMITTED') {

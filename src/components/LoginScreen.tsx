@@ -1,3 +1,4 @@
+import { api } from '../services/api';
 import React, { useState } from 'react';
 import { User, Lock, Eye, EyeOff, LogIn, HelpCircle, BookOpen, AlertCircle } from 'lucide-react';
 import { UserSession } from '../types';
@@ -7,35 +8,37 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
-  const [username, setUsername] = useState('canbonhaplieu');
-  const [password, setPassword] = useState('••••••••');
+  const [username, setUsername] = useState('editor_com1');
+  const [password, setPassword] = useState('password123');
   const [role, setRole] = useState<'EDITOR' | 'APPRAISER' | 'SUPERVISOR'>('EDITOR');
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
   const presetUsers = [
     {
-      username: 'canbonhaplieu',
+      username: 'editor_com1',
       fullName: 'Nguyễn Văn An',
       role: 'EDITOR' as const,
       desc: 'Cán bộ Chuyên viên xã/huyện',
-      dept: 'Phòng Nông nghiệp & Phát triển Nông thôn',
+      dept: 'UBND Xã Bình Minh',
       badgeColor: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     },
     {
-      username: 'canbothamđinh',
+      username: 'appraiser_prov1',
       fullName: 'Trần Minh Thẩm',
       role: 'APPRAISER' as const,
       desc: 'Hội đồng Thẩm định liên ngành',
-      dept: 'Hội đồng Khoa học & Thẩm định cấp Tỉnh',
+      dept: 'Sở NN&PTNT Tỉnh Đông',
       badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     },
     {
-      username: 'canbogiamsat',
+      username: 'supervisor_bo',
       fullName: 'Phạm Hoàng Giám',
       role: 'SUPERVISOR' as const,
       desc: 'Văn phòng Giám sát Trung ương',
-      dept: 'Ủy ban MTTQ Việt Nam & Ban Chỉ đạo Trung ương',
+      dept: 'Văn phòng Điều phối NTM Trung ương',
       badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     },
   ];
@@ -43,22 +46,46 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const handleSelectPreset = (user: typeof presetUsers[0]) => {
     setUsername(user.username);
     setRole(user.role);
-    setPassword('••••••••');
+    setPassword('password123');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const selectedUser = presetUsers.find((u) => u.username === username) || {
-      username: username,
-      fullName: username === 'canbothamđinh' ? 'Trần Minh Thẩm' : username === 'canbogiamsat' ? 'Phạm Hoàng Giám' : 'Nguyễn Văn An',
-      role: role
-    };
+    setErrorMsg(null);
+    setIsLoading(true);
 
-    onLoginSuccess({
-      username: selectedUser.username,
-      fullName: selectedUser.fullName,
-      role: selectedUser.role,
-    });
+    try {
+      const data = await api.login(username, password);
+      onLoginSuccess({
+        id: data.user.id,
+        username: data.user.username,
+        fullName: data.user.fullName,
+        role: data.user.role,
+        token: data.token,
+        unitCode: data.user.unitCode,
+        permissions: data.user.permissions
+      });
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setErrorMsg(err.message || 'Kết nối máy chủ thất bại. Đang chạy ở chế độ Demo ngoại tuyến...');
+      
+      // Fallback for offline demo mode
+      setTimeout(() => {
+        const selectedUser = presetUsers.find((u) => u.username === username) || {
+          username: username,
+          fullName: username === 'appraiser_prov1' ? 'Trần Minh Thẩm' : username === 'supervisor_bo' ? 'Phạm Hoàng Giám' : 'Nguyễn Văn An',
+          role: role
+        };
+        onLoginSuccess({
+          username: selectedUser.username,
+          fullName: selectedUser.fullName,
+          role: selectedUser.role,
+          token: 'offline-demo-token-key-2026'
+        });
+      }, 1500);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -120,6 +147,12 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
           {/* Form fields */}
           <form id="login-form" onSubmit={handleSubmit} className="mt-6 space-y-4">
+            {errorMsg && (
+              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-semibold flex items-center gap-2 select-none animate-shake">
+                <AlertCircle className="w-4.5 h-4.5 text-amber-600 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
             {/* Field: Username */}
             <div>
@@ -187,9 +220,9 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-[#014285] hover:bg-[#003366] active:scale-[0.99] text-white font-extrabold py-3 px-4 rounded-md text-sm tracking-wide transition-all flex items-center justify-center gap-2 mt-5 shadow-sm cursor-pointer"
+              className="w-full bg-[#014285] hover:bg-[#003366] active:scale-[0.99] text-white font-extrabold py-3 px-4 rounded-md text-sm tracking-wide transition-all flex items-center justify-center gap-2 mt-5 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" disabled={isLoading}
             >
-              <span>Đăng nhập</span>
+              <span>{isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}</span>
               <LogIn className="w-4 h-4" />
             </button>
           </form>
