@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   BookOpen,
@@ -28,6 +28,8 @@ interface CriteriaTabProps {
   onAddCriterion: (newC: Criterion) => void;
   onEditCriterion: (updatedC: Criterion) => void;
   onDeleteCriterion: (id: string) => void;
+  onNavigateToDocument?: (docCode: string) => void;
+  initialSearchTerm?: string;
 }
 
 export default function CriteriaTab({
@@ -37,6 +39,8 @@ export default function CriteriaTab({
   onAddCriterion,
   onEditCriterion,
   onDeleteCriterion,
+  onNavigateToDocument,
+  initialSearchTerm,
 }: CriteriaTabProps) {
   // Navigation tabs list
   const categories = [
@@ -45,9 +49,31 @@ export default function CriteriaTab({
   ];
 
   const [activeTab, setActiveTab] = useState('Tất cả');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm || '');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // Sync search term from App component
+  useEffect(() => {
+    if (initialSearchTerm !== undefined) {
+      setSearchTerm(initialSearchTerm);
+    }
+  }, [initialSearchTerm]);
+
+  // Load available regulatory documents from localStorage
+  const docsList = useMemo(() => {
+    const saved = localStorage.getItem('NTM_RegulatoryDocuments');
+    if (saved) {
+      try {
+        return JSON.parse(saved) as any[];
+      } catch (e) {
+        // ignore
+      }
+    }
+    return [];
+  }, []);
+
+  const [formRelatedDocCode, setFormRelatedDocCode] = useState('');
 
   // Notification states
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -191,6 +217,7 @@ export default function CriteriaTab({
     setFormGroup3('Đạt');
     setFormProofs(['Quyết định phê duyệt', 'Bản đồ quy hoạch']);
     setProofInput('');
+    setFormRelatedDocCode('');
     setShowAddModal(true);
   };
 
@@ -210,7 +237,8 @@ export default function CriteriaTab({
       group1Threshold: formGroup1,
       group2Threshold: formGroup2,
       group3Threshold: formGroup3,
-      proofs: formProofs
+      proofs: formProofs,
+      relatedDocCode: formRelatedDocCode || undefined
     };
 
     onAddCriterion(newCriterion);
@@ -233,6 +261,7 @@ export default function CriteriaTab({
     setFormGroup3(mapped.group3Threshold);
     setFormProofs(mapped.proofs);
     setProofInput('');
+    setFormRelatedDocCode(c.relatedDocCode || '');
     setShowEditModal(true);
   };
 
@@ -252,7 +281,8 @@ export default function CriteriaTab({
       group2Threshold: formGroup2,
       group3Threshold: formGroup3,
       proofs: formProofs,
-      indicator: formProofs[0] || 'Yêu cầu đi kèm'
+      indicator: formProofs[0] || 'Yêu cầu đi kèm',
+      relatedDocCode: formRelatedDocCode || undefined
     };
 
     onEditCriterion(updated);
@@ -562,13 +592,22 @@ export default function CriteriaTab({
                           <p className="text-xs text-[#475569] font-medium leading-relaxed max-w-xl">
                             {item.description}
                           </p>
-                          <div className="flex items-center gap-2 pt-1.5">
+                          <div className="flex items-center gap-2 pt-1.5 flex-wrap">
                             <span className="text-xs font-bold text-slate-400 bg-slate-100 border border-slate-200/50 px-2 py-0.5 rounded uppercase tracking-wider">
                               Phân loại: {item.category}
                             </span>
-                            <span className="text-xs font-bold text-[#2563eb] bg-blue-50/60 px-2 py-0.5 rounded border border-blue-100 uppercase tracking-wide">
+                            {item.relatedDocCode && (
+                              <button
+                                onClick={() => onNavigateToDocument?.(item.relatedDocCode!)}
+                                className="text-[10px] font-black text-[#014285] bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded border border-blue-200 uppercase tracking-wide inline-flex items-center gap-1 cursor-pointer transition-all shadow-sm"
+                                title="Xem văn bản hướng dẫn chi tiết"
+                              >
+                                📄 VB: {item.relatedDocCode}
+                              </button>
+                            )}
+                            {/* <span className="text-xs font-bold text-[#2563eb] bg-blue-50/60 px-2 py-0.5 rounded border border-blue-100 uppercase tracking-wide">
                               Trọng số: {item.weight}
-                            </span>
+                            </span> */}
                           </div>
                         </div>
                       </td>
@@ -645,7 +684,7 @@ export default function CriteriaTab({
                               className="text-xs font-semibold text-[#475569] bg-[#f1f5f9] border border-slate-200 py-1 px-2.5 rounded flex items-center gap-1.5 w-full justify-between"
                             >
                               <span className="truncate" title={proof}>{proof}</span>
-                              {userSession.role === 'EDITOR' && (
+                              {userSession.role === 'SUPERVISOR' && (
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteQuickProof(item.id, pIdx)}
@@ -659,7 +698,7 @@ export default function CriteriaTab({
                           ))}
 
                           {/* Interactive Plus addition triggers popup input inside cell */}
-                          {userSession.role === 'EDITOR' && (
+                          {userSession.role === 'SUPERVISOR' && (
                             <div className="relative w-full mt-1">
                               {showQuickProofInput === item.id ? (
                                 <div className="absolute top-0 right-0 bg-white border border-[#2563eb]/20 shadow-xl p-1.5 rounded-lg z-20 flex gap-1 w-44">
@@ -704,21 +743,21 @@ export default function CriteriaTab({
                       {/* 7. Action Commands */}
                       <td className="py-5 px-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
-                          {userSession.role === 'EDITOR' ? (
+                          {userSession.role === 'SUPERVISOR' ? (
                             <>
                               <button
                                 onClick={() => handleOpenEdit(item)}
-                                className="p-1 px-1.5 text-slate-400 hover:text-[#2563eb] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                className="p-1 px-1.5 text-slate-450 hover:text-[#2563eb] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                                 title="Chỉnh sửa chi tiết tiêu chí"
                               >
-                                <Edit3 className="w-3.8 h-3.8" />
+                                <Edit3 className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => handleDelete(item.id, formattedSTT)}
-                                className="p-1 px-1.5 text-slate-400 hover:text-[#ef4444] hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                className="p-1 px-1.5 text-slate-450 hover:text-[#ef4444] hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                                 title="Gỡ bỏ tiêu chí"
                               >
-                                <Trash2 className="w-3.8 h-3.8" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </>
                           ) : (
@@ -842,6 +881,22 @@ export default function CriteriaTab({
                   </select>
                 </div>
 
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#475569] block mb-1 uppercase tracking-wider">Văn bản pháp chế liên kết</label>
+                <select
+                  value={formRelatedDocCode}
+                  onChange={(e) => setFormRelatedDocCode(e.target.value)}
+                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200/80 rounded-lg outline-none font-bold text-slate-800 focus:border-[#2563eb] cursor-pointer"
+                >
+                  <option value="">-- Không có văn bản liên kết --</option>
+                  {docsList.map((doc) => (
+                    <option key={doc.code} value={doc.code}>
+                      [{doc.code}] - {doc.title}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -1055,6 +1110,22 @@ export default function CriteriaTab({
                   </select>
                 </div>
 
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#475569] block mb-1 uppercase tracking-wider">Văn bản pháp chế liên kết</label>
+                <select
+                  value={formRelatedDocCode}
+                  onChange={(e) => setFormRelatedDocCode(e.target.value)}
+                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-slate-850 cursor-pointer"
+                >
+                  <option value="">-- Không có văn bản liên kết --</option>
+                  {docsList.map((doc) => (
+                    <option key={doc.code} value={doc.code}>
+                      [{doc.code}] - {doc.title}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

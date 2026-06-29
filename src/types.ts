@@ -27,6 +27,9 @@ export interface ResourceInvestRow {
   sectionCode?: 'I' | 'II' | 'III';
   category: string;
   quantity: number;
+  // 6T - Huy động
+  hd_total?: number;
+  hd_vdt_total?: number;
   hd_nstw_dtpt: number;
   hd_nstw_sn: number;
   hd_nsdp: number;
@@ -34,6 +37,9 @@ export interface ResourceInvestRow {
   hd_tinDung: number;
   hd_doanhNghiep: number;
   hd_danGop: number;
+  // KH cuối năm
+  kh_total?: number;
+  kh_vdt_total?: number;
   kh_nstw_dtpt: number;
   kh_nstw_sn: number;
   kh_nsdp: number;
@@ -93,6 +99,7 @@ export interface Criterion {
   group3Threshold?: string;
   thresholdType?: 'boolean' | 'percentage' | string;
   proofs?: string[];
+  relatedDocCode?: string; // Code of issuing document (e.g., "15/HD-GTVT")
 }
 
 export interface AppraisalLog {
@@ -118,6 +125,7 @@ export interface FormReport {
   editor: string;
   proofFiles: ProofFile[];
   data: any[];
+  columns?: FormColumn[];
   appraisal?: AppraisalLog;
   supervision?: SupervisionLog;
 }
@@ -182,14 +190,21 @@ export interface FormColumn {
   label: string;
   type: 'text' | 'number' | 'boolean';
   width?: number;
+  group?: string;
+  subGroup?: string;
+  subSubGroup?: string;
 }
 
 export interface FormRowConfig {
   id: number;
   tt?: string;
   category: string;
-  unit: string;
+  unit?: string;
   defaultNote?: string;
+  isHeader?: boolean;
+  parentId?: number;
+  sectionCode?: string;
+  [key: string]: any;
 }
 
 export interface FormTemplate {
@@ -210,6 +225,12 @@ export interface IndicatorConfig {
   category: string;
 }
 
+export interface DocumentRelation {
+  entityType: 'criterion' | 'project' | 'unit' | 'submission';
+  entityId: string; // code or ID
+  label: string; // e.g. "TC02"
+}
+
 export interface RegulatoryDocument {
   id: string;
   code: string;
@@ -220,6 +241,7 @@ export interface RegulatoryDocument {
   issueDate: string;
   content: string;
   relatedCriteria: string[];
+  relations?: DocumentRelation[];
   fileImage?: string;
   pdfFile?: string;
   pdfFileName?: string;

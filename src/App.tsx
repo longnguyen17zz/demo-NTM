@@ -26,7 +26,7 @@ import SupervisionTab from './components/SupervisionTab';
 import LoginScreen from './components/LoginScreen';
 import AdministrativeTab from './components/AdministrativeTab';
 import AccountsTab from './components/AccountsTab';
-import FormDesignerTab from './components/FormDesignerTab';
+import FormDesignerTab, { INITIAL_FORM_TEMPLATES } from './components/FormDesignerTab';
 import IndicatorStatisticsTab from './components/IndicatorStatisticsTab';
 import DocumentsTab from './components/DocumentsTab';
 import NationalIntegrationTab from './components/NationalIntegrationTab';
@@ -143,6 +143,52 @@ export default function App() {
   const [activeDocCode, setActiveDocCode] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [reportYear, setReportYear] = useState('2024');
+  // Synchronize navigation state with browser history (allowing back/forward buttons to work)
+  const isPopStateRef = React.useRef(false);
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state) {
+        const { currentTab, selectedPeriodId, selectedFormId } = event.state;
+        isPopStateRef.current = true;
+        setCurrentTab(currentTab || 'overview');
+        setSelectedPeriodId(selectedPeriodId || null);
+        setSelectedFormId(selectedFormId || null);
+        setTimeout(() => {
+          isPopStateRef.current = false;
+        }, 50);
+      }
+    };
+    
+    // Replace initial state on mount
+    window.history.replaceState({
+      currentTab,
+      selectedPeriodId,
+      selectedFormId
+    }, "");
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (isPopStateRef.current) return;
+    
+    const currentState = window.history.state;
+    const stateMismatch = !currentState ||
+      currentState.currentTab !== currentTab ||
+      currentState.selectedPeriodId !== selectedPeriodId ||
+      currentState.selectedFormId !== selectedFormId;
+
+    if (stateMismatch) {
+      window.history.pushState({
+        currentTab,
+        selectedPeriodId,
+        selectedFormId
+      }, "");
+    }
+  }, [currentTab, selectedPeriodId, selectedFormId]);
+
 
   // Categories list state (loaded from local storage, dynamically synced)
   const [categories, setCategories] = useState<string[]>(() => {
@@ -287,6 +333,39 @@ export default function App() {
       localStorage.setItem('NTM_Criteria', JSON.stringify(INITIAL_DICTIONARY_CRITERIA));
     }
 
+    // Auto-repair Form Templates in localStorage if outdated (using hd_vdt_total check)
+    try {
+      const savedTemplates = localStorage.getItem('NTM_FormTemplates');
+      if (savedTemplates) {
+        const parsedTmpls = JSON.parse(savedTemplates);
+        if (Array.isArray(parsedTmpls)) {
+          let tmplsUpdated = false;
+          const updatedTmpls = parsedTmpls.map(t => {
+            if (t.code === 'Biểu 09' || t.code === 'Biểu 12') {
+              const hasOld = !t.columns || !t.columns.some((c: any) => c.id === 'hd_vdt_total');
+              if (hasOld) {
+                const latest = INITIAL_FORM_TEMPLATES.find(x => x.code === t.code);
+                if (latest) {
+                  tmplsUpdated = true;
+                  return {
+                    ...t,
+                    columns: latest.columns,
+                    rows: latest.rows
+                  };
+                }
+              }
+            }
+            return t;
+          });
+          if (tmplsUpdated) {
+            localStorage.setItem('NTM_FormTemplates', JSON.stringify(updatedTmpls));
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Templates auto-repair failed: ", e);
+    }
+
     // Periods load (+ dynamic forms setup)
     const savedPeriods = localStorage.getItem('NTM_Periods');
     let parsedSuccessfully = false;
@@ -297,13 +376,67 @@ export default function App() {
           let updated = false;
           parsed = parsed.map(period => {
             if (!period) return period;
+            
+            // Robust check: if Biểu 09 or Biểu 12 lacks hd_vdt_total column, force rebuild its columns and data
+            if (Array.isArray(period.forms)) {
+              period.forms = period.forms.map(form => {
+                if (form && (form.code === 'Biểu 09' || form.code === 'Biểu 12')) {
+                  const hasOldColumns = !form.columns.some(c => c.id === 'hd_vdt_total');
+                  if (hasOldColumns) {
+                    const latestB09 = INITIAL_FORM_TEMPLATES.find(t => t.code === 'Biểu 09');
+                    if (latestB09) {
+                      updated = true;
+                      return {
+                        ...form,
+                        columns: latestB09.columns,
+                        data: JSON.parse(JSON.stringify(INITIAL_RESOURCE_ROWS))
+                      };
+                    }
+                  }
+                }
+                return form;
+              });
+            }
+
+            
+            
+            // Robust check: if Biểu 09 or Biểu 12 lacks hd_vdt_total column, force rebuild its columns and data
+            if (Array.isArray(period.forms)) {
+              period.forms = period.forms.map(form => {
+                if (form && (form.code === 'Biểu 09' || form.code === 'Biểu 12')) {
+                  const hasOldColumns = !form.columns.some(c => c.id === 'hd_vdt_total');
+                  if (hasOldColumns) {
+                    const latestB09 = INITIAL_FORM_TEMPLATES.find(t => t.code === 'Biểu 09');
+                    if (latestB09) {
+                      updated = true;
+                      return {
+                        ...form,
+                        columns: latestB09.columns,
+                        data: JSON.parse(JSON.stringify(INITIAL_RESOURCE_ROWS))
+                      };
+                    }
+                  }
+                }
+                return form;
+              });
+            }
+
+            
             const defaultForms = createDefaultFormsForPeriod(period.id || '2024-q4');
             const existingForms = Array.isArray(period.forms) ? period.forms : [];
 
             const forms = defaultForms.map(defForm => {
               const existingForm = existingForms.find(f => f && f.code === defForm.code);
-              const form = existingForm ? existingForm : (updated = true, defForm);
+              let form = existingForm ? existingForm : (updated = true, defForm);
               if (!form) return form;
+
+              if (JSON.stringify(form.columns) !== JSON.stringify(defForm.columns)) {
+                form = {
+                  ...form,
+                  columns: defForm.columns
+                };
+                updated = true;
+              }
 
               const isB06 = form.code === 'Biểu 06';
               const isB09OrB12 = form.code === 'Biểu 09' || form.code === 'Biểu 12';
@@ -339,19 +472,112 @@ export default function App() {
               }
 
               if (isB09OrB12) {
-                // Ensure if there's any row containing old criteria headers/categories like "Quy hoạch" we reset it completely
                 const hasOldData = dataArray.some(row => row && (row.category === 'Quy hoạch' || row.category === 'Hạ tầng kinh tế - xã hội'));
                 const hasIncorrectLength = dataArray.length < 15;
                 const isEmptyData = dataArray.length === 0;
+                const isOutdated = dataArray.length > 0 && dataArray.some(row => row && row.hd_total === undefined);
 
-                if (hasOldData || hasIncorrectLength || isEmptyData) {
+                if (hasOldData || hasIncorrectLength || isEmptyData || isOutdated) {
                   updated = true;
-                  return {
+                  const baseRows = JSON.parse(JSON.stringify(dataArray.length >= 15 ? dataArray : INITIAL_RESOURCE_ROWS));
+                  const repairedData = baseRows.map((row) => {
+                    if (!row || row.isHeader) return row;
+                    
+                    const hd_nstw_dtpt = Number(row.hd_nstw_dtpt ?? row.h1_nstw_dtpt ?? 0);
+                    const hd_nstw_sn = Number(row.hd_nstw_sn ?? row.h1_nstw_sn ?? 0);
+                    const hd_nsdp = Number(row.hd_nsdp ?? row.h1_nsdp ?? 0);
+                    const hd_longGhep = Number(row.hd_longGhep ?? row.h1_longGhep ?? 0);
+                    const hd_tinDung = Number(row.hd_tinDung ?? row.h1_tinDung ?? 0);
+                    const hd_doanhNghiep = Number(row.hd_doanhNghiep ?? row.h1_doanhNghiep ?? 0);
+                    const hd_danGop = Number(row.hd_danGop ?? row.h1_danGop ?? 0);
+
+                    const kh_nstw_dtpt = Number(row.kh_nstw_dtpt ?? row.h2_nstw_dtpt ?? 0);
+                    const kh_nstw_sn = Number(row.kh_nstw_sn ?? row.h2_nstw_sn ?? 0);
+                    const kh_nsdp = Number(row.kh_nsdp ?? row.h2_nsdp ?? 0);
+                    const kh_longGhep = Number(row.kh_longGhep ?? row.h2_longGhep ?? 0);
+                    const kh_tinDung = Number(row.kh_tinDung ?? row.h2_tinDung ?? 0);
+                    const kh_doanhNghiep = Number(row.kh_doanhNghiep ?? row.h2_doanhNghiep ?? 0);
+                    const kh_danGop = Number(row.kh_danGop ?? row.h2_danGop ?? 0);
+
+                    const hd_vdt_total = hd_nstw_dtpt + hd_nstw_sn + hd_nsdp;
+                    const kh_vdt_total = kh_nstw_dtpt + kh_nstw_sn + kh_nsdp;
+
+                    return {
+                      ...row,
+                      hd_nstw_dtpt,
+                      hd_nstw_sn,
+                      hd_nsdp,
+                      hd_longGhep,
+                      hd_tinDung,
+                      hd_doanhNghiep,
+                      hd_danGop,
+                      kh_nstw_dtpt,
+                      kh_nstw_sn,
+                      kh_nsdp,
+                      kh_longGhep,
+                      kh_tinDung,
+                      kh_doanhNghiep,
+                      kh_danGop,
+                      hd_vdt_total,
+                      kh_vdt_total,
+                      hd_total: hd_vdt_total + hd_longGhep + hd_tinDung + hd_doanhNghiep + hd_danGop,
+                      kh_total: kh_vdt_total + kh_longGhep + kh_tinDung + kh_doanhNghiep + kh_danGop
+                    };
+                  });
+                  
+                  form = {
                     ...form,
-                    data: JSON.parse(JSON.stringify(INITIAL_RESOURCE_ROWS))
+                    data: repairedData
                   };
                 }
               }
+
+                            // Auto-repair missing text fields for all other forms to show realistic mock data
+              if (!isB06 && !isB13 && !isB09OrB12 && dataArray.length > 0) {
+                const defTmpl = INITIAL_FORM_TEMPLATES.find(t => t.code === form.code);
+                const cols = defTmpl?.columns || [];
+                let rowUpdated = false;
+                const repairedData = dataArray.map((row: any) => {
+                  if (!row || row.isHeader) return row;
+                  const newRow = { ...row };
+                  cols.forEach((col: any) => {
+                    if (col.id !== 'tt' && col.id !== 'category' && col.id !== 'unit' && col.id !== 'note') {
+                      if (newRow[col.id] === undefined || newRow[col.id] === '') {
+                        rowUpdated = true;
+                        if (col.type === 'number') {
+                          newRow[col.id] = Math.floor(Math.random() * 20) + 1;
+                        } else if (col.type === 'boolean') {
+                          newRow[col.id] = Math.random() > 0.3;
+                        } else if (col.type === 'text') {
+                          if (col.id === 'type') {
+                            newRow[col.id] = row.category || '';
+                          } else if (col.id === 'codeAndDate') {
+                            newRow[col.id] = `${Math.floor(Math.random() * 150) + 10}/2024/QĐ-UBND ngày 12/04/2024`;
+                          } else if (col.id === 'summary') {
+                            newRow[col.id] = `Đề án thúc đẩy và hoàn thiện chỉ tiêu về ${row.category ? row.category.toLowerCase() : 'kinh tế'}`;
+                          } else if (col.id === 'mainGoal') {
+                            newRow[col.id] = `Nâng cao năng lực và hiện đại hóa cơ sở hạ tầng`;
+                          } else if (col.id === 'mainContent') {
+                            newRow[col.id] = `Hỗ trợ kinh phí ngân sách nhà nước kết hợp nguồn vốn xã hội hóa`;
+                          } else {
+                            newRow[col.id] = `Nội dung mẫu cho ${col.label.toLowerCase()}`;
+                          }
+                        }
+                      }
+                    }
+                  });
+                  return newRow;
+                });
+
+                if (rowUpdated) {
+                  updated = true;
+                  form = {
+                    ...form,
+                    data: repairedData
+                  };
+                }
+              }
+
               return form;
             });
             return { ...period, forms };
@@ -521,6 +747,14 @@ export default function App() {
   const handleViewGuideDoc = (docCode: string) => {
     setActiveDocCode(docCode);
     setCurrentTab('documents');
+    setSelectedPeriodId(null);
+    setSelectedFormId(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToCriterion = (critCode: string) => {
+    setCurrentTab('criteria');
+    setSearchQuery(critCode);
     setSelectedPeriodId(null);
     setSelectedFormId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -891,6 +1125,8 @@ export default function App() {
                   onAddCriterion={handleAddCriterion}
                   onEditCriterion={handleEditCriterion}
                   onDeleteCriterion={handleDeleteCriterion}
+                  onNavigateToDocument={handleViewGuideDoc}
+                  initialSearchTerm={searchQuery}
                 />
               )}
 
@@ -958,6 +1194,7 @@ export default function App() {
                   activeDocCode={activeDocCode}
                   onDocCodeSelect={setActiveDocCode}
                   userSession={userSession}
+                  onNavigateToCriterion={handleNavigateToCriterion}
                 />
               )}
 

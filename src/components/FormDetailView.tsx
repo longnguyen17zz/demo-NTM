@@ -42,6 +42,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { FormReport, CriterionRow, ProofFile, UserSession, CommuneSubmission } from '../types';
+import DynamicSpreadsheet from './DynamicSpreadsheet';
 
 interface PolicyRow {
   id: string;
@@ -845,12 +846,55 @@ export default function FormDetailView({
   // Interactive state for Biểu 10
   const [selectedCriteriaId, setSelectedCriteriaId] = useState<number>(1);
   const [criteriaList, setCriteriaList] = useState<Criteria10[]>(() => {
+    const savedCriteria = localStorage.getItem('NTM_Criteria');
+    let criteriaArray: any[] = [];
+    if (savedCriteria) {
+      try {
+        criteriaArray = JSON.parse(savedCriteria);
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    const baseList: Criteria10[] = criteriaArray.map((c, index) => {
+      const isRate = c.thresholdType === 'percentage';
+      const g1 = parseInt(c.group1Threshold) || 90;
+      const g2 = parseInt(c.group2Threshold) || 80;
+      const g3 = parseInt(c.group3Threshold) || 70;
+      const isSeedCompleted = index === 0 || index === 3 || index === 4 || index === 5;
+      
+      return {
+        id: index + 1,
+        code: c.code,
+        title: `${c.code}: ${c.title}`,
+        subTitle: c.description || `Chi tiết nội dung yêu cầu về chỉ tiêu ${c.title}`,
+        statusText: isSeedCompleted ? "Đạt" : "Chưa đạt",
+        isCompleted: isSeedCompleted,
+        decisionNo: isSeedCompleted ? `${100 + index}/QĐ-UBND` : "",
+        decisionDate: isSeedCompleted ? "2024-03-15" : "",
+        note: isSeedCompleted ? `Đã rà soát đạt chỉ tiêu về ${c.title.toLowerCase()}.` : "",
+        proofFiles: isSeedCompleted ? [{ name: `QD_Phe_Duyet_${c.code}.pdf`, size: "2.4 MB" }] : [],
+        guidelines: c.indicator || c.description || "Yêu cầu kiểm chuẩn theo hướng dẫn của cơ quan chủ quản.",
+        guideDoc: c.relatedDocCode || "",
+        isRateType: isRate,
+        numerator: isSeedCompleted ? g2 : 0,
+        denominator: 100,
+        targetPercent: g2,
+        group1Threshold: g1,
+        group2Threshold: g2,
+        group3Threshold: g3,
+        unit: "chỉ tiêu",
+        numeratorLabel: `Số lượng đạt chuẩn của ${c.title.toLowerCase()}`,
+        denominatorLabel: `Tổng số lượng rà soát`
+      };
+    });
+
     const saved = localStorage.getItem(`NôngThônMới_Biểu10_TiêuChí`);
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as Criteria10[];
-        return INITIAL_CRITERIA_10.map(initItem => {
-          const savedItem = parsed.find(p => p.id === initItem.id);
+        return baseList.map(initItem => {
+          const savedItem = parsed.find(p => p.code === initItem.code || p.id === initItem.id);
           if (savedItem) {
             return {
               ...initItem,
@@ -867,10 +911,10 @@ export default function FormDetailView({
           return initItem;
         });
       } catch (e) {
-        return INITIAL_CRITERIA_10;
+        return baseList;
       }
     }
-    return INITIAL_CRITERIA_10;
+    return baseList;
   });
 
   // Active Commune lookup
@@ -1481,526 +1525,50 @@ export default function FormDetailView({
     });
   }, [criteriaList, criteriaSearch, showCriteriaFilter]);
 
-  if (form.code === 'Biểu 04') {
+  
+  if (form.code !== 'Biểu 10') {
+    const isDr = form.status === 'DRAFT' || form.status === 'REJECTED';
+
     return (
       <div className="space-y-6 animate-fade-in text-slate-800 font-sans pb-12">
         {/* Toast alert */}
         {notifyMessage && (
-          <div className="fixed bottom-6 right-6 bg-slate-900/95 backdrop-blur-md border border-slate-800 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3.5 z-50 max-w-sm transition-all duration-350">
+          <div className="fixed bottom-6 right-6 bg-slate-900/95 backdrop-blur-md border border-slate-800 text-white px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(15,23,42,0.3)] flex items-center gap-3.5 z-50 max-w-md transition-all duration-300">
             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
             <span className="text-xs font-bold leading-relaxed">{notifyMessage}</span>
-            <button onClick={() => setNotifyMessage(null)} className="ml-auto text-white/40 hover:text-white transition-colors border-none bg-transparent cursor-pointer">
+            <button onClick={() => setNotifyMessage(null)} className="ml-auto text-white/40 hover:text-white transition-colors border-none bg-transparent">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        {/* Breadcrumbs */}
-        <div className="text-xs text-slate-400 font-bold mb-1 flex items-center gap-1.5 flex-wrap uppercase tracking-wider">
-          <button onClick={onBackToPeriods || onBack} className="hover:text-[#014285] cursor-pointer transition-colors border-none bg-transparent">
-            Đợt báo cáo
+        {/* Navigator headers and back */}
+        <div className="flex items-center gap-3 mb-3 text-left">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all cursor-pointer border border-slate-200/60 shadow-sm"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-500" />
+            <span>Quay lại</span>
           </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <button onClick={onBack} className="hover:text-[#014285] cursor-pointer transition-colors border-none bg-transparent">
-            Chi tiết đợt báo cáo
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <span className="text-[#014285] font-black">Báo cáo Mẫu 04</span>
-        </div>
-
-        {/* Top Header Row with actions */}
-        <div className="bg-white rounded-3xl border border-slate-150 p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-base font-black text-[#014285] tracking-tight uppercase leading-snug">
-              CÁC CƠ CHẾ, CHÍNH SÁCH DO ĐỊA PHƯƠNG BAN HÀNH ĐỂ THỰC HIỆN CHƯƠNG TRÌNH GIAI ĐOẠN 2026-2030
-            </h1>
-            <p className="text-xs text-slate-500 mt-1 font-bold">
-              Nhập danh sách các cơ chế, chính sách do địa phương ban hành phục vụ chương trình NTM.
-            </p>
-          </div>
-          <div className="flex gap-3 shrink-0">
-            <button
-              onClick={() => {
-                setNotifyMessage('Đã tải tệp mẫu Excel thành công!');
-                setTimeout(() => setNotifyMessage(null), 3000);
-              }}
-              className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 rounded-2xl hover:bg-slate-50 text-slate-750 text-xs font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap bg-white"
-            >
-              <Download className="w-4 h-4 text-slate-500" />
-              Tải mẫu Excel
+          <div className="h-4 w-px bg-slate-200"></div>
+          <div className="text-xs text-slate-400 font-bold flex items-center gap-1.5 flex-wrap uppercase tracking-wider">
+            <button onClick={onBackToPeriods || onBack} className="hover:text-[#014285] hover:underline cursor-pointer transition-all border-none bg-transparent font-bold">
+              Đợt báo cáo
             </button>
-            <button
-              onClick={() => {
-                setNotifyMessage('Lưu trữ bản nháp biểu 04 thành công!');
-                setTimeout(() => setNotifyMessage(null), 3000);
-              }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#014285] hover:bg-[#01356b] text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-blue-900/10 cursor-pointer whitespace-nowrap"
-            >
-              <Save className="w-4 h-4" />
-              Lưu bản nháp
+            <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+            <button onClick={onBack} className="hover:text-[#014285] hover:underline cursor-pointer transition-all border-none bg-transparent font-bold">
+              Chi tiết đợt báo cáo
             </button>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+            <span className="text-[#014285] font-black">{form.code}</span>
           </div>
         </div>
 
-        {/* Two column grid layout for input and instructions */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-
-          {/* Main registration form */}
-          <div id="thong-tin-co-che" className="xl:col-span-8 space-y-6 animate-fade-in">
-            <div className="bg-white rounded-3xl border border-slate-150 p-6 shadow-sm">
-              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4 mb-6">
-                <FileText className="w-5 h-5 text-[#014285]" />
-                <h2 className="text-sm font-black text-slate-800 uppercase tracking-wide">
-                  Thông tin cơ chế chính sách
-                </h2>
-                {editPolicyId && (
-                  <span className="ml-auto px-2V py-0.5 bg-amber-100 text-amber-800 text-xs font-black uppercase rounded-lg">
-                    Chế độ chỉnh sửa
-                  </span>
-                )}
-              </div>
-
-              <form onSubmit={handleAddOrUpdatePolicy04} className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-750 mb-1.5">
-                      Loại văn bản <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={type04}
-                      onChange={(e) => setType04(e.target.value)}
-                      className="w-full text-xs p-3 transition-all border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-slate-100 font-bold text-slate-800 focus:border-[#014285] bg-slate-50/20"
-                    >
-                      <option value="Nghị quyết của HĐND">Nghị quyết của HĐND</option>
-                      <option value="Quyết định của UBND">Quyết định của UBND</option>
-                      <option value="Kế hoạch">Kế hoạch</option>
-                      <option value="Chỉ thị">Chỉ thị</option>
-                      <option value="Thông tư">Thông tư</option>
-                      <option value="Nghị định">Nghị định</option>
-                      <option value="Khác">Khác</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-750 mb-1.5">
-                      Số/Ngày ban hành <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ví dụ: 12/2023/NQ-HĐND - 15/10/2023"
-                      value={codeAndDate04}
-                      onChange={(e) => setCodeAndDate04(e.target.value)}
-                      className="w-full text-xs p-3 transition-all border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-slate-100 font-bold text-slate-800 focus:border-[#014285]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-750 mb-1.5">
-                    Trích yếu văn bản <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Nhập tóm tắt tiêu đề văn bản..."
-                    value={summary04}
-                    onChange={(e) => setSummary04(e.target.value)}
-                    className="w-full text-xs p-3 transition-all border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-slate-100 font-bold text-slate-800 focus:border-[#014285]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-750 mb-1.5">
-                      Mục tiêu chính
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="Xác định các mục tiêu trọng tâm..."
-                      value={mainGoal04}
-                      onChange={(e) => setMainGoal04(e.target.value)}
-                      className="w-full text-xs p-3 transition-all border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-slate-100 font-bold text-slate-800 focus:border-[#014285]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-750 mb-1.5">
-                      Nội dung chủ yếu <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      rows={3}
-                      required
-                      placeholder="Các nội dung thực hiện chính..."
-                      value={mainContent04}
-                      onChange={(e) => setMainContent04(e.target.value)}
-                      className="w-full text-xs p-3 transition-all border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-slate-100 font-bold text-slate-800 focus:border-[#014285]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-750 mb-1.5">
-                    Ghi chú
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Thông tin bổ sung nếu có..."
-                    value={notes04}
-                    onChange={(e) => setNotes04(e.target.value)}
-                    className="w-full text-xs p-3 transition-all border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-slate-100 font-bold text-slate-800 focus:border-[#014285]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-750 mb-1.5">
-                    Đính kèm văn bản PDF <span className="text-red-500">*</span>
-                  </label>
-
-                  {attachedFile04 ? (
-                    <div className="border border-dashed border-emerald-300 bg-emerald-50/30 rounded-2xl p-4 flex items-center justify-between animate-fade-in">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
-                          <FileText className="w-5 h-5 animate-pulse" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black text-slate-800">{attachedFile04.name}</p>
-                          <p className="text-xs text-slate-500 font-bold">{attachedFile04.size} • Đã đính kèm thành công</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAttachedFile04(null);
-                          setNotifyMessage('Đã gỡ bỏ tệp đính kèm.');
-                          setTimeout(() => setNotifyMessage(null), 2500);
-                        }}
-                        className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-slate-100 rounded-lg transition-all border-none bg-transparent cursor-pointer"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={handlePdfAttachMock04}
-                      className="border-2 border-dashed border-slate-300 hover:border-[#014285] bg-slate-50/50 hover:bg-blue-50/5 rounded-2xl p-7 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group"
-                    >
-                      <Upload className="w-8 h-8 text-slate-400 mb-2 group-hover:text-[#014285] transition-colors" />
-                      <p className="text-xs text-slate-605 font-bold">
-                        Kéo thả file PDF vào đây hoặc <span className="text-[#014285] font-black underline">chọn file</span>
-                      </p>
-                      <p className="text-xs text-slate-450 mt-1 font-bold">
-                        Dung lượng tối đa 10MB. Chỉ chấp nhận định dạng .pdf
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                  {editPolicyId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditPolicyId(null);
-                        setCodeAndDate04('');
-                        setSummary04('');
-                        setMainGoal04('');
-                        setMainContent04('');
-                        setNotes04('');
-                        setAttachedFile04(null);
-                        setNotifyMessage('Đã hủy chế độ chỉnh sửa.');
-                        setTimeout(() => setNotifyMessage(null), 2000);
-                      }}
-                      className="px-4 py-2.5 border border-slate-300 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer bg-white"
-                    >
-                      Hủy bỏ
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    className="flex items-center gap-1.5 px-6 py-2.5 bg-[#014285] hover:bg-[#01356b] text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-blue-900/10 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    {editPolicyId ? 'Cập nhật văn bản' : 'Thêm vào danh sách'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {/* Right sidebar */}
-          <div className="xl:col-span-4 space-y-6">
-
-            {/* Box 1: Guide */}
-            <div className="bg-[#f0f7ff] border border-[#e1f0ff] rounded-3xl p-6 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Info className="w-4.5 h-4.5 text-[#014285] shrink-0" />
-                <h3 className="text-xs font-black text-[#014285] uppercase tracking-wider">
-                  Hướng dẫn kê khai
-                </h3>
-              </div>
-              <ul className="space-y-3.5 text-xs text-slate-700 font-semibold leading-relaxed pl-1 list-none">
-                <li className="flex items-start gap-2">
-                  <span className="text-[#014285] font-extrabold text-xs mt-0.5">•</span>
-                  <span>Chỉ kê khai các văn bản do cấp xã ban hành còn hiệu lực.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#014285] font-extrabold text-xs mt-0.5">•</span>
-                  <span>Mỗi văn bản đính kèm bắt buộc phải có bản quét PDF có dấu mộc đỏ.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#014285] font-extrabold text-xs mt-0.5">•</span>
-                  <span>Phần "Nội dung chủ yếu" cần tóm lược các điểm mới, hỗ trợ trực tiếp cho 19 tiêu chí NTM.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Box 2: Stats */}
-            <div className="bg-white border border-slate-150 rounded-3xl p-6 shadow-sm space-y-5">
-              <h3 className="text-xs font-black text-slate-850 uppercase tracking-wider border-b border-slate-100 pb-3">
-                Thống kê danh sách
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
-                  <p className="text-xs uppercase font-black tracking-widest text-slate-500">TỔNG SỐ</p>
-                  <p className="text-2xl font-black text-[#014285] mt-1">
-                    {computedStats04.total < 10 ? `0${computedStats04.total}` : computedStats04.total}
-                  </p>
-                </div>
-                <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 text-center">
-                  <p className="text-xs uppercase font-black tracking-widest text-[#01a862]">ĐÃ ĐÍNH KÈM</p>
-                  <p className="text-2xl font-black text-[#01a862] mt-1">
-                    {computedStats04.attached < 10 ? `0${computedStats04.attached}` : computedStats04.attached}
-                  </p>
-                </div>
-              </div>
-
-              {computedStats04.notAttached > 0 && (
-                <div className="bg-red-50 border border-red-100 text-red-800 p-4 rounded-2xl flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 shrink-0 text-red-650 mt-0.5" />
-                  <p className="text-xs font-bold leading-relaxed">
-                    Có <strong className="font-black text-red-900">{computedStats04.notAttached} văn bản</strong> chưa đính kèm file PDF. Vui lòng bổ sung trước khi gửi báo cáo.
-                  </p>
-                </div>
-              )}
-            </div>
-
-          </div>
-        </div>
-
-        {/* Bottom Section: Table List */}
-        <div className="bg-white rounded-3xl border border-slate-150 shadow-sm overflow-hidden mt-6">
-          <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">
-                Danh sách cơ chế chính sách đã kê khai
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5 font-bold">
-                Bảng thông tin lưu trữ công quy hoạch và phân rã cơ cấu hỗ trợ phát triển vùng.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
-              <div className="relative flex-1 sm:flex-initial">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm văn bản..."
-                  value={searchQuery04}
-                  onChange={(e) => {
-                    setSearchQuery04(e.target.value);
-                    setCurrentPage04(1);
-                  }}
-                  className="w-full sm:w-60 text-xs pl-10 pr-4 py-2 border border-slate-300 rounded-2xl outline-none focus:border-[#014285] font-bold text-slate-800"
-                />
-              </div>
-              <button
-                onClick={() => {
-                  window.print();
-                }}
-                title="In danh sách này"
-                className="p-2 border border-slate-300 rounded-2xl hover:bg-slate-50 transition-all text-slate-650 cursor-pointer bg-white"
-              >
-                <Printer className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto text-sm">
-            <table className="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-500 uppercase text-xs font-black tracking-wider border-b border-slate-100">
-                  <th className="py-4 px-6 text-center w-16">STT</th>
-                  <th className="py-4 px-6 w-52">Loại văn bản</th>
-                  <th className="py-4 px-6 w-60">Số/Ngày ban hành</th>
-                  <th className="py-4 px-6">Trích yếu</th>
-                  <th className="py-4 px-6 w-52">Đính kèm</th>
-                  <th className="py-4 px-6 text-center w-28">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
-                {paginatedPolicies04.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400 font-bold bg-slate-50/10">
-                      Không tìm thấy bản ghi nào khớp với điều kiện tìm kiếm.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedPolicies04.map((p, idx) => {
-                    const stt = (currentPage04 - 1) * 3 + idx + 1;
-                    return (
-                      <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-6 text-center text-slate-400 font-bold">{stt}</td>
-                        <td className="py-4 px-6">
-                          <span className="text-[#014285] font-extrabold">
-                            {p.type}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 text-slate-800 font-bold">
-                          <div>
-                            <p className="leading-tight text-slate-900 font-extrabold">{p.codeAndDate.split('-')[0]?.trim()}</p>
-                            <p className="text-xs text-slate-450 mt-1 uppercase tracking-wider font-extrabold">
-                              {p.codeAndDate.split('-')[1]?.trim() || 'Hết hiệu lực'}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="max-w-md">
-                            <p className="text-slate-800 leading-relaxed font-bold">{p.summary}</p>
-                            {p.mainGoal && (
-                              <p className="text-xs text-slate-500 font-bold mt-1 leading-snug">
-                                <span className="font-extrabold text-[#014285]">Mục tiêu: </span>
-                                {p.mainGoal}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          {p.pdfFile ? (
-                            <div className="flex items-center gap-2 group max-w-xs overflow-hidden">
-                              <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
-                              <button
-                                onClick={() => {
-                                  setNotifyMessage(`Đang tải tệp về: ${p.pdfFile?.name}`);
-                                  setTimeout(() => setNotifyMessage(null), 2500);
-                                }}
-                                className="text-emerald-600 hover:text-emerald-850 text-xs font-black truncate text-left border-none bg-transparent cursor-pointer hover:underline p-0"
-                              >
-                                {p.pdfFile.name}
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1.5 text-red-500 font-black">
-                              <AlertCircle className="w-4 h-4" />
-                              <span>Chưa đính kèm</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => handleEditSelect04(p)}
-                              title="Sửa thông tin"
-                              className="p-1.5 hover:bg-blue-50 text-slate-600 hover:text-[#014285] rounded-xl transition-all border-none bg-transparent cursor-pointer"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeletePolicy04(p.id)}
-                              title="Xóa văn bản"
-                              className="p-1.5 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-xl transition-all border-none bg-transparent cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Table pagination row */}
-          {maxPages04 > 1 && (
-            <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-              <span className="text-xs text-slate-500 font-bold">
-                Hiển thị {Math.min(filteredPolicies04.length, (currentPage04 - 1) * 3 + 1)}-{Math.min(filteredPolicies04.length, currentPage04 * 3)} trong tổng số {filteredPolicies04.length} cơ chế
-              </span>
-
-              <div className="flex items-center gap-1">
-                <button
-                  disabled={currentPage04 === 1}
-                  onClick={() => setCurrentPage04(prev => Math.max(1, prev - 1))}
-                  className="p-1.5 border border-slate-300 rounded-xl hover:bg-slate-100 disabled:opacity-45 disabled:hover:bg-transparent text-slate-600 transition-all cursor-pointer bg-white"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                {Array.from({ length: maxPages04 }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage04(page)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${currentPage04 === page
-                      ? 'bg-[#014285] text-white shadow-md shadow-blue-900/10'
-                      : 'border border-slate-300 text-slate-600 hover:bg-slate-100 bg-white'
-                      }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-
-                <button
-                  disabled={currentPage04 === maxPages04}
-                  onClick={() => setCurrentPage04(prev => Math.min(maxPages04, prev + 1))}
-                  className="p-1.5 border border-slate-300 rounded-xl hover:bg-slate-100 disabled:opacity-45 disabled:hover:bg-transparent text-slate-600 transition-all cursor-pointer bg-white"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (form.code === 'Biểu 06') {
-    const isDr = form.status === 'DRAFT' || form.status === 'REJECTED';
-
-    return (
-      <div className="space-y-6 animate-fade-in text-slate-800 font-sans pb-12" id="bieu-06-view">
-        {/* Toast alert */}
-        {notifyMessage && (
-          <div className="fixed bottom-6 right-6 bg-slate-900/95 backdrop-blur-md border border-slate-800 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3.5 z-50 max-w-sm transition-all duration-350" id="toast-notify">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span className="text-xs font-bold leading-relaxed">{notifyMessage}</span>
-            <button onClick={() => setNotifyMessage(null)} className="ml-auto text-white/40 hover:text-white transition-colors border-none bg-transparent cursor-pointer">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Breadcrumbs */}
-        <div className="text-xs text-slate-400 font-bold mb-1 flex items-center gap-1.5 flex-wrap uppercase tracking-wider" id="bieu-06-breadcrumb">
-          <button onClick={onBackToPeriods || onBack} className="hover:text-amber-500 cursor-pointer transition-colors border-none bg-transparent">
-            Đợt báo cáo
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <button onClick={onBack} className="hover:text-amber-500 cursor-pointer transition-colors border-none bg-transparent">
-            Chi tiết đợt báo cáo
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <span className="text-[#014285] font-black">Báo cáo Mẫu 06</span>
-        </div>
-
-        {/* Warning card for Rejected state */}
         {form.status === 'REJECTED' && form.appraisal && (
-          <div className="bg-red-50 border border-red-200 text-red-800 p-5 rounded-2xl flex items-start gap-4 shadow-sm animate-pulse-subtle" id="rejected-warning-card">
+          <div className="bg-red-50 border border-red-200 text-red-800 p-5 rounded-2xl flex items-start gap-4 shadow-sm">
             <AlertCircle className="w-5.5 h-5.5 shrink-0 text-red-650 mt-0.5" />
-            <div className="text-xs space-y-1">
+            <div className="text-xs space-y-1 text-left">
               <span className="font-extrabold uppercase tracking-wider text-red-900 block">Yêu cầu sửa đổi bổ sung</span>
               <p className="font-bold leading-relaxed">{form.appraisal.comment}</p>
               <div className="pt-1.5 flex items-center gap-2">
@@ -2016,231 +1584,72 @@ export default function FormDetailView({
           </div>
         )}
 
-        {/* Header Block matching screenshot */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6" id="header-block">
-          <div className="space-y-2">
+        {/* Header Block */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-2 text-left">
             <span className="text-xs uppercase font-black bg-blue-50 text-[#2563eb] px-2.5 py-1 rounded-md border border-blue-100 tracking-wider">
-              PHỤ BIỂU SỐ 06
+              BÁO CÁO RÀ SOÁT
             </span>
             <h1 className="text-sm md:text-base font-black text-[#0f2942] tracking-tight uppercase leading-snug">
-              KẾT QUẢ THỰC HIỆN CHƯƠNG TRÌNH 6 THÁNG ... / NĂM ...
+              {form.title}
             </h1>
             <p className="text-xs text-slate-500 font-bold leading-normal">
-              (Kèm theo Mẫu số 03 của Chương trình Mục tiêu quốc gia xây dựng Nông thôn mới giai đoạn 2021 - 2025)
+              (Định dạng biểu mẫu cấu hình động &bull; Cập nhật lúc {new Date(form.updatedAt).toLocaleString('vi-VN')})
             </p>
           </div>
 
-          <div className="flex flex-row md:flex-col items-start md:items-end justify-between w-full md:w-auto bg-amber-50/50 border border-amber-100 p-4 rounded-2xl shrink-0 gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-              </span>
-              <span className="text-xs font-black text-amber-700">Đang cập nhật</span>
-            </div>
-            <div className="text-xs text-slate-500 font-bold text-left md:text-right">
-              Hạn chót: <span className="font-extrabold text-slate-700">30/06/2024</span>
-            </div>
+          <div className="flex items-center gap-2">
+            {isDr && (
+              <button
+                type="button"
+                onClick={handleStartSync}
+                className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-black rounded-2xl flex items-center gap-2 transition-all cursor-pointer border-none shadow-md shadow-amber-900/10"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Đồng bộ CSDL Bộ Tài chính
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setNotifyMessage("Đang xuất dữ liệu Excel...");
+                setTimeout(() => setNotifyMessage(null), 2500);
+              }}
+              className="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 text-xs font-bold rounded-2xl border border-slate-200 flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-slate-500" />
+              Tải mẫu Excel
+            </button>
           </div>
-        </div>
-
-        {/* Informational Banner */}
-        <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-2xl flex items-center justify-between gap-4" id="info-banner">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#2563eb]/10 text-[#2563eb] rounded-xl shrink-0">
-              <Info className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-700">
-                Lưu ý: Bạn đang thực hiện cập nhật báo cáo với vai trò đại diện đơn vị ban chỉ đạo cấp Tỉnh.
-              </p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Các cột số liệu của 3 nhóm xã được thu thập trực tiếp và tự động kết nối từ hệ thống báo cáo cơ sở của địa phương.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setNotifyMessage('Đã tải tệp bảng tính mẫu Biểu 06!');
-              setTimeout(() => setNotifyMessage(null), 2500);
-            }}
-            className="hidden lg:flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 cursor-pointer transition-all shrink-0"
-            id="download-excel-btn"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            Tải Excel
-          </button>
         </div>
 
         {/* Dynamic Spreadsheet Table wrapper */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden" id="spreadsheet-wrapper">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/20">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                Bảng số liệu tổng hợp kết quả bộ tiêu chí
+                Bảng nhập liệu động
               </h3>
             </div>
             <span className="text-xs text-slate-400 font-bold italic">
-              Đơn vị tính: Mã lượng đơn vị chuẩn (Xã)
+              Thực hiện rà soát trực tiếp
             </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse border-b border-slate-100 min-w-[1000px]">
-              <thead>
-                <tr className="bg-slate-50/60 text-slate-700 uppercase text-xs font-black border-b border-slate-200 text-center">
-                  <th className="py-3 px-3 border-r border-slate-200 w-16">TT</th>
-                  <th className="py-3 px-4 border-r border-slate-200 text-left min-w-[320px]">Nội dung</th>
-                  <th className="py-3 px-3 border-r border-slate-200 w-52 text-center bg-slate-50/40">Kết quả đến 31/12 của năm trước</th>
-                  <th className="py-3 px-3 border-r border-slate-200 w-52 text-center bg-slate-50/40">Thực hiện 6 tháng năm...</th>
-                  <th className="py-3 px-3 border-r border-slate-200 w-52 text-center bg-slate-50/40">Kế hoạch 6 tháng cuối năm...</th>
-                  <th className="py-3 px-4 text-left min-w-[180px]">Ghi chú</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
-                {(form.data || []).map((row, idx) => {
-                  const isHeaderRow = row.tt === 'I' || row.tt === 'II' || row.tt === 'III';
-                  const isParentRow = row.tt === '1' || row.tt === '2' || row.tt === '2.1' || row.tt === '2.2' || row.tt === '3' || row.tt === '4';
-
-                  if (isHeaderRow) {
-                    return (
-                      <tr key={row.id} className="bg-slate-50/80 font-black text-slate-900 border-y border-slate-200 h-11">
-                        <td className="py-3 px-3 text-center border-r border-slate-200 text-slate-900 font-extrabold">
-                          {row.tt}
-                        </td>
-                        <td className="py-3 px-4 border-r border-slate-200 text-slate-900 font-extrabold text-left uppercase">
-                          {row.category}
-                        </td>
-                        <td className="py-3 px-3 border-r border-slate-200 bg-slate-50/30"></td>
-                        <td className="py-3 px-3 border-r border-slate-200 bg-slate-50/30"></td>
-                        <td className="py-3 px-3 border-r border-slate-200 bg-slate-50/30"></td>
-                        <td className="py-3 px-4 bg-slate-50/30"></td>
-                      </tr>
-                    );
-                  }
-
-                  if (isParentRow) {
-                    return (
-                      <tr key={row.id} className="bg-slate-50/35 hover:bg-slate-50/70 transition-colors font-bold text-slate-800 border-b border-slate-150 h-12">
-                        <td className="py-3 px-3 text-center border-r border-slate-150 text-slate-800 font-bold">
-                          {row.tt}
-                        </td>
-                        <td className="py-3 px-4 border-r border-slate-150 text-slate-850 font-extrabold text-left">
-                          {row.category}
-                        </td>
-                        <td className="p-1 border-r border-slate-150 bg-slate-100/30 text-center font-extrabold text-slate-800 w-52">
-                          <input
-                            type="number"
-                            value={row.group1?.prevYear ?? 0}
-                            disabled={true}
-                            className="w-full text-center py-2 border border-transparent font-black bg-transparent text-slate-800 focus:outline-none cursor-not-allowed"
-                          />
-                        </td>
-                        <td className="p-1 border-r border-slate-150 bg-slate-100/30 text-center font-extrabold text-slate-800 w-52">
-                          <input
-                            type="number"
-                            value={row.group1?.currentS1 ?? 0}
-                            disabled={true}
-                            className="w-full text-center py-2 border border-transparent font-black bg-transparent text-slate-800 focus:outline-none cursor-not-allowed"
-                          />
-                        </td>
-                        <td className="p-1 border-r border-slate-150 bg-slate-100/30 text-center font-extrabold text-slate-800 w-52">
-                          <input
-                            type="number"
-                            value={row.group1?.planS2 ?? 0}
-                            disabled={true}
-                            className="w-full text-center py-2 border border-transparent font-black bg-transparent text-slate-800 focus:outline-none cursor-not-allowed"
-                          />
-                        </td>
-                        <td className="px-3 py-1 bg-slate-50/20">
-                          <input
-                            type="text"
-                            value={row.note || ''}
-                            disabled={!isDr}
-                            placeholder="Ghi chú..."
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const updated = form.data.map(r => r.id === row.id ? { ...r, note: val } : r);
-                              onUpdateForm({ ...form, data: updated, updatedAt: new Date().toISOString() });
-                            }}
-                            className="w-full text-xs px-2.5 py-1.5 border border-slate-200/60 rounded-lg font-bold text-slate-800 hover:bg-white bg-slate-50/40 text-left outline-none focus:border-[#2563eb] focus:bg-white transition-all placeholder:text-slate-350"
-                          />
-                        </td>
-                      </tr>
-                    );
-                  }
-
-                  const isItalic = row.tt === '-' || row.tt === '1.1' || row.tt === '1.2' || row.tt === '1.3';
-                  const isIndented = row.tt === '-';
-                  const categoryClass = `py-3 px-4 border-r border-slate-150 text-left ${isItalic ? 'italic font-semibold text-slate-650' : 'font-extrabold text-slate-800'
-                    } ${isIndented ? 'pl-8' : ''}`;
-                  const ttClass = `py-3 px-3 text-center border-r border-slate-150 font-mono text-slate-500 ${isIndented ? 'italic font-bold' : 'font-bold'}`;
-
-                  return (
-                    <tr key={row.id} className="hover:bg-slate-50/40 transition-colors border-b border-slate-100 h-12">
-                      <td className={ttClass}>
-                        {row.tt}
-                      </td>
-                      <td className={categoryClass}>
-                        {row.category}
-                      </td>
-                      <td className="p-1 border-r border-slate-150 bg-slate-50/10 w-52">
-                        <input
-                          type="number"
-                          value={row.group1?.prevYear ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'group1', 'prevYear', e.target.value)}
-                          className={`w-full text-center py-2 border rounded-xl font-extrabold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#2563eb] transition-all border-slate-200/80 ${cellFlashes[`${row.id}-group1-prevYear`] ? 'bg-amber-100' : ''
-                            }`}
-                        />
-                      </td>
-                      <td className="p-1 border-r border-slate-150 bg-slate-50/10 w-52">
-                        <input
-                          type="number"
-                          value={row.group1?.currentS1 ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'group1', 'currentS1', e.target.value)}
-                          className={`w-full text-center py-2 border rounded-xl font-extrabold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#2563eb] transition-all border-slate-200/80 ${cellFlashes[`${row.id}-group1-currentS1`] ? 'bg-amber-100' : ''
-                            }`}
-                        />
-                      </td>
-                      <td className="p-1 border-r border-slate-150 bg-slate-50/10 w-52">
-                        <input
-                          type="number"
-                          value={row.group1?.planS2 ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'group1', 'planS2', e.target.value)}
-                          className={`w-full text-center py-2 border rounded-xl font-extrabold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#2563eb] transition-all border-slate-200/80 ${cellFlashes[`${row.id}-group1-planS2`] ? 'bg-amber-100' : ''
-                            }`}
-                        />
-                      </td>
-                      <td className="px-3 py-1 bg-slate-50/20">
-                        <input
-                          type="text"
-                          value={row.note || ''}
-                          disabled={!isDr}
-                          placeholder="Ghi chú..."
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const updated = form.data.map(r => r.id === row.id ? { ...r, note: val } : r);
-                            onUpdateForm({ ...form, data: updated, updatedAt: new Date().toISOString() });
-                          }}
-                          className="w-full text-xs px-2.5 py-1.5 border border-slate-200/60 rounded-lg font-bold text-slate-800 hover:bg-white bg-slate-50/40 text-left outline-none focus:border-[#2563eb] focus:bg-white transition-all placeholder:text-slate-300"
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="p-4">
+            <DynamicSpreadsheet
+              columns={form.columns || []}
+              data={form.data || []}
+              onChange={(newData) => onUpdateForm({ ...form, data: newData, updatedAt: new Date().toISOString() })}
+              readOnly={!isDr}
+            />
           </div>
         </div>
 
         {/* Bottom details block - Proof upload & requirements */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
           {/* File Upload Block */}
-          <div className="lg:col-span-8 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm" id="proof-upload-panel">
+          <div className="lg:col-span-8 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
             <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
               <FileText className="w-4 h-4 text-[#2563eb]" />
               Tải lên hồ sơ minh chứng
@@ -2254,7 +1663,7 @@ export default function FormDetailView({
                       <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
                         <FileText className="w-5 h-5" />
                       </div>
-                      <div>
+                      <div className="text-left">
                         <p className="text-xs font-black text-slate-800">{file.name}</p>
                         <p className="text-xs text-slate-400 font-bold">
                           {((file.size || 0) / 1024 / 1024).toFixed(2)} MB &bull; Đã đính kèm ngày {file.uploadedAt || 'vừa xong'}
@@ -2279,8 +1688,8 @@ export default function FormDetailView({
             {isDr ? (
               <div
                 onClick={() => {
-                  const mockFile: ProofFile = {
-                    name: 'Bao_Cao_Minh_Chung_Bo_Tieu_Chi_B06_SignCert.pdf',
+                  const mockFile = {
+                    name: `Bao_Cao_Minh_Chung_${form.code.replace(' ', '')}_SignCert.pdf`,
                     size: 2154820,
                     uploadedAt: new Date().toISOString().split('T')[0],
                     type: 'pdf'
@@ -2299,7 +1708,7 @@ export default function FormDetailView({
                 <p className="text-xs text-slate-600 font-bold">
                   Kéo thả file PDF hoặc Excel vào đây để đính kèm, hoặc <span className="text-[#2563eb] font-black underline">chọn file</span>
                 </p>
-                <p className="text-xs text-slate-450 mt-1 font-bold">
+                <p className="text-xs text-slate-455 mt-1 font-bold">
                   Hỗ trợ định dạng PDF, Excel. Tối đa 25MB. (Click để tải lên tài liệu minh chứng mẫu ngay)
                 </p>
               </div>
@@ -2311,8 +1720,8 @@ export default function FormDetailView({
           </div>
 
           {/* Technical requirements sidebar panel */}
-          <div className="lg:col-span-4 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between" id="tech-requirements-panel">
-            <div>
+          <div className="lg:col-span-4 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+            <div className="text-left">
               <h4 className="text-xs font-black text-slate-850 uppercase tracking-wider mb-4 border-b border-slate-100 pb-3 flex items-center gap-2">
                 <BookmarkCheck className="w-4 h-4 text-emerald-500" />
                 Yêu cầu kỹ thuật
@@ -2324,7 +1733,7 @@ export default function FormDetailView({
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-500 font-extrabold text-xs mt-0.5">✓</span>
-                  <span>Các trường 'Kế hoạch 6 tháng cuối năm' được tính toán tự động dựa trên chỉ tiêu năm.</span>
+                  <span>Tự động gộp nhóm tiêu đề đa cấp dựa trên cấu hình template.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-500 font-extrabold text-xs mt-0.5">✓</span>
@@ -2336,2118 +1745,192 @@ export default function FormDetailView({
         </div>
 
         {/* Global form draft helper sticky banner */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-in" id="sticky-action-banner">
+        <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-in">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-50 text-[#2563eb] rounded-xl shrink-0">
               <ShieldAlert className="w-4.5 h-4.5" />
             </div>
-            <p className="text-xs font-extrabold text-[#2563eb]">
+            <p className="text-xs font-extrabold text-[#2563eb] text-left">
               Mọi dữ liệu thay đổi trên bảng biểu này sẽ được lưu tự động bản nháp.
             </p>
           </div>
 
-          {/* <div className="flex items-center gap-3.5 w-full sm:w-auto self-end sm:self-center justify-end">
-            <button
-              onClick={() => {
-                setNotifyMessage('Đã tiến hành lưu trữ bản nháp Biểu 06 thành công!');
-                setTimeout(() => setNotifyMessage(null), 3000);
-              }}
-              className="px-5 py-2.5 border border-slate-300 text-slate-700 bg-white rounded-2xl text-xs font-black hover:bg-slate-50 transition-all cursor-pointer whitespace-nowrap"
-            >
-              Lưu nháp
-            </button>
-
-            {isDr ? (
+          {isDr && (
+            <div className="flex items-center gap-3 w-full sm:w-auto self-end sm:self-center justify-end">
+              <button
+                onClick={handleSaveDraft}
+                className="px-5 py-2.5 border border-slate-350 text-slate-700 bg-white rounded-2xl text-xs font-black hover:bg-slate-50 transition-all cursor-pointer whitespace-nowrap"
+              >
+                Lưu nháp
+              </button>
               <button
                 onClick={() => setShowConfirmPopup(true)}
                 className="px-5 py-2.5 bg-[#014285] hover:bg-[#01356b] text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-blue-900/15 cursor-pointer whitespace-nowrap flex items-center gap-2"
-                id="submit-form-06-btn"
               >
                 <Send className="w-4 h-4" />
                 Gửi báo cáo
               </button>
-            ) : null}
-          </div> */}
-        </div>
-
-        {/* Digital Signature Confirmation Popup Modal */}
-        {showConfirmPopup && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="bg-white rounded-3xl max-w-md w-full border border-slate-150 p-6 shadow-2xl relative animate-scale-up">
-              <button
-                onClick={() => setShowConfirmPopup(false)}
-                className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 border-none bg-transparent cursor-pointer p-1"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="text-center space-y-3 mb-6">
-                <div className="w-12 h-12 bg-blue-50 text-[#014285] rounded-full flex items-center justify-center mx-auto mb-3">
-                  <ShieldCheck className="w-6 h-6 animate-pulse" />
-                </div>
-                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Ký số &amp; Gửi duyệt báo cáo</h3>
-                <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-                  Bản báo cáo <strong className="font-bold text-slate-750">{form.code}</strong> sẽ được gửi trực tiếp lên ban chỉ đạo Trung ương phê duyệt thẩm định.
-                </p>
-              </div>
-
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!digitalSignInput.trim()) {
-                    alert('Vui lòng điền họ và tên người ký xác nhận.');
-                    return;
-                  }
-                  onUpdateForm({
-                    ...form,
-                    status: 'SUBMITTED',
-                    editor: digitalSignInput,
-                    updatedAt: new Date().toISOString(),
-                  });
-                  setShowConfirmPopup(false);
-                  setNotifyMessage(`Biểu mẫu đã được Ký số bởi ${digitalSignInput} và gửi đi phê duyệt thẩm định.`);
-                  setTimeout(() => setNotifyMessage(null), 4000);
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Họ và tên người ký chính chủ <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={digitalSignInput}
-                    onChange={(e) => setDigitalSignInput(e.target.value)}
-                    placeholder="Điền đầy đủ họ và tên..."
-                    className="w-full text-xs p-3 transition-all border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#014285] font-extrabold text-slate-800"
-                  />
-                  <p className="text-xs text-slate-400 mt-2 font-bold leading-normal">
-                    Lưu ý: Bằng việc nhập họ tên, bạn xác nhận số liệu đã kiểm kê khớp thực địa và chịu trách nhiệm pháp lý về số liệu báo cáo này.
-                  </p>
-                </div>
-
-                <div className="flex gap-3 pt-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPopup(false)}
-                    className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer bg-white"
-                  >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-3 bg-[#014285] hover:bg-[#01356b] text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-blue-900/10 cursor-pointer"
-                  >
-                    Chấp thuận &amp; Ký số
-                  </button>
-                </div>
-              </form>
             </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (form.code === 'Biểu 09' || form.code === 'Biểu 12') {
-    const isDr = form.status === 'DRAFT' || form.status === 'REJECTED';
-
-    // Calculate Grand Totals across non-header rows
-    const calculatedTotals = {
-      quantity: 0,
-      hd_tongSo: 0,
-      hd_vdt_tongSo: 0,
-      hd_nstw_dtpt: 0,
-      hd_nstw_sn: 0,
-      hd_nsdp: 0,
-      hd_longGhep: 0,
-      hd_tinDung: 0,
-      hd_doanhNghiep: 0,
-      hd_danGop: 0,
-
-      kh_tongSo: 0,
-      kh_vdt_tongSo: 0,
-      kh_nstw_dtpt: 0,
-      kh_nstw_sn: 0,
-      kh_nsdp: 0,
-      kh_longGhep: 0,
-      kh_tinDung: 0,
-      kh_doanhNghiep: 0,
-      kh_danGop: 0,
-    };
-
-    (form.data || []).forEach(row => {
-      if (row.isHeader) return;
-      const quantity = Number(row.quantity) || 0;
-      const hd_dtpt = Number(row.hd_nstw_dtpt) || 0;
-      const hd_sn = Number(row.hd_nstw_sn) || 0;
-      const hd_nsdp = Number(row.hd_nsdp) || 0;
-      const hd_long = Number(row.hd_longGhep) || 0;
-      const hd_tin = Number(row.hd_tinDung) || 0;
-      const hd_doanh = Number(row.hd_doanhNghiep) || 0;
-      const hd_dan = Number(row.hd_danGop) || 0;
-
-      const hd_vdt = hd_dtpt + hd_sn + hd_nsdp;
-      const hd_tot = hd_vdt + hd_long + hd_tin + hd_doanh + hd_dan;
-
-      const kh_dtpt = Number(row.kh_nstw_dtpt) || 0;
-      const kh_sn = Number(row.kh_nstw_sn) || 0;
-      const kh_nsdp = Number(row.kh_nsdp) || 0;
-      const kh_long = Number(row.kh_longGhep) || 0;
-      const kh_tin = Number(row.kh_tinDung) || 0;
-      const kh_doanh = Number(row.kh_doanhNghiep) || 0;
-      const kh_dan = Number(row.kh_danGop) || 0;
-
-      const kh_vdt = kh_dtpt + kh_sn + kh_nsdp;
-      const kh_tot = kh_vdt + kh_long + kh_tin + kh_doanh + kh_dan;
-
-      calculatedTotals.quantity += quantity;
-      calculatedTotals.hd_nstw_dtpt += hd_dtpt;
-      calculatedTotals.hd_nstw_sn += hd_sn;
-      calculatedTotals.hd_nsdp += hd_nsdp;
-      calculatedTotals.hd_longGhep += hd_long;
-      calculatedTotals.hd_tinDung += hd_tin;
-      calculatedTotals.hd_doanhNghiep += hd_doanh;
-      calculatedTotals.hd_danGop += hd_dan;
-      calculatedTotals.hd_vdt_tongSo += hd_vdt;
-      calculatedTotals.hd_tongSo += hd_tot;
-
-      calculatedTotals.kh_nstw_dtpt += kh_dtpt;
-      calculatedTotals.kh_nstw_sn += kh_sn;
-      calculatedTotals.kh_nsdp += kh_nsdp;
-      calculatedTotals.kh_longGhep += kh_long;
-      calculatedTotals.kh_tinDung += kh_tin;
-      calculatedTotals.kh_doanhNghiep += kh_doanh;
-      calculatedTotals.kh_danGop += kh_dan;
-      calculatedTotals.kh_vdt_tongSo += kh_vdt;
-      calculatedTotals.kh_tongSo += kh_tot;
-    });
-
-    const handleInputChange = (rowId: any, field: string, val: any) => {
-      const parsedVal = val === '' ? 0 : isNaN(Number(val)) ? val : Number(val);
-      const updatedData = form.data.map((r: any) => {
-        if (r.id === rowId) {
-          return {
-            ...r,
-            [field]: parsedVal,
-          };
-        }
-        return r;
-      });
-
-      onUpdateForm({
-        ...form,
-        data: updatedData,
-        updatedAt: new Date().toISOString(),
-      });
-    };
-
-    const handleAddChildRow = (sectionCode: 'I' | 'II' | 'III') => {
-      const maxId = form.data.reduce((max: number, r: any) => Math.max(max, Number(r.id) || 0), 0);
-      const nextId = maxId + 1;
-
-      const newRow = {
-        id: nextId,
-        isHeader: false,
-        sectionCode,
-        category: "Nội dung thành phần mới",
-        quantity: 0,
-        hd_nstw_dtpt: 0, hd_nstw_sn: 0, hd_nsdp: 0, hd_longGhep: 0, hd_tinDung: 0, hd_doanhNghiep: 0, hd_danGop: 0,
-        kh_nstw_dtpt: 0, kh_nstw_sn: 0, kh_nsdp: 0, kh_longGhep: 0, kh_tinDung: 0, kh_doanhNghiep: 0, kh_danGop: 0,
-        note: ""
-      };
-
-      const lastIndexOfSection = form.data.map((r: any, idx: number) => ({ r, idx }))
-        .filter((item: any) => item.r.sectionCode === sectionCode)
-        .slice(-1)[0]?.idx;
-
-      const updatedData = [...form.data];
-      if (lastIndexOfSection !== undefined) {
-        updatedData.splice(lastIndexOfSection + 1, 0, newRow);
-      } else {
-        updatedData.push(newRow);
-      }
-
-      onUpdateForm({
-        ...form,
-        data: updatedData,
-        updatedAt: new Date().toISOString(),
-      });
-
-      setNotifyMessage("Đã thêm nội dung chi tiêu mới thành công.");
-      setTimeout(() => setNotifyMessage(null), 3000);
-    };
-
-    const handleAddChildItem = (parentId: any) => {
-      const parentRow = form.data.find((r: any) => r.id === parentId);
-      if (!parentRow) return;
-
-      const maxId = form.data.reduce((max: number, r: any) => Math.max(max, Number(r.id) || 0), 0);
-      const nextId = maxId + 1;
-
-      const newChildRow = {
-        id: nextId,
-        isHeader: false,
-        sectionCode: parentRow.sectionCode,
-        parentId: parentRow.id,
-        category: "Nội dung con mới",
-        quantity: 0,
-        hd_nstw_dtpt: 0, hd_nstw_sn: 0, hd_nsdp: 0, hd_longGhep: 0, hd_tinDung: 0, hd_doanhNghiep: 0, hd_danGop: 0,
-        kh_nstw_dtpt: 0, kh_nstw_sn: 0, kh_nsdp: 0, kh_longGhep: 0, kh_tinDung: 0, kh_doanhNghiep: 0, kh_danGop: 0,
-        note: ""
-      };
-
-      const updatedData = [...form.data];
-      let insertIndex = -1;
-      for (let i = 0; i < updatedData.length; i++) {
-        if (updatedData[i].id === parentId) {
-          insertIndex = i;
-        } else if (updatedData[i].parentId === parentId) {
-          insertIndex = i;
-        }
-      }
-
-      if (insertIndex !== -1) {
-        updatedData.splice(insertIndex + 1, 0, newChildRow);
-      } else {
-        updatedData.push(newChildRow);
-      }
-
-      onUpdateForm({
-        ...form,
-        data: updatedData,
-        updatedAt: new Date().toISOString(),
-      });
-
-      setNotifyMessage("Đã thêm nội dung con mới thành công.");
-      setTimeout(() => setNotifyMessage(null), 3000);
-    };
-
-    const handleDeleteRow = (rowId: any, category: string) => {
-      const updatedData = form.data.filter((r: any) => r.id !== rowId && r.parentId !== rowId);
-      onUpdateForm({
-        ...form,
-        data: updatedData,
-        updatedAt: new Date().toISOString(),
-      });
-      setNotifyMessage(`Đã xóa nội dung: "${category}"`);
-      setTimeout(() => setNotifyMessage(null), 3500);
-    };
-
-    let countI = 0;
-    let countII = 0;
-    let countIII = 0;
-    const parentTTMap: { [parentId: number]: string } = {};
-    const childCountMap: { [parentId: number]: number } = {};
-
-    return (
-      <div className="space-y-6 animate-fade-in text-slate-800 font-sans pb-12" id={form.code === 'Biểu 09' ? 'bieu-09-view' : 'bieu-12-view'}>
-        {notifyMessage && (
-          <div className="fixed bottom-6 right-6 bg-slate-900/95 backdrop-blur-md border border-slate-800 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3.5 z-50 max-w-sm transition-all duration-350 animate-fade-in" id={form.code === 'Biểu 09' ? 'toast-notify-09' : 'toast-notify-12'}>
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span className="text-xs font-bold leading-relaxed">{notifyMessage}</span>
-            <button onClick={() => setNotifyMessage(null)} className="ml-auto text-white/40 hover:text-white transition-colors border-none bg-transparent cursor-pointer">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        <div className="text-xs text-slate-400 font-bold mb-1 flex items-center gap-1.5 flex-wrap uppercase tracking-wider text-left" id={form.code === 'Biểu 09' ? 'bieu-09-breadcrumb' : 'bieu-12-breadcrumb'}>
-          <button onClick={onBackToPeriods || onBack} className="hover:text-amber-500 cursor-pointer transition-colors border-none bg-transparent font-bold">
-            Đợt báo cáo
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <button onClick={onBack} className="hover:text-amber-500 cursor-pointer transition-colors border-none bg-transparent font-bold">
-            Chi tiết đợt báo cáo
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <span className="text-[#014285] font-black">Báo cáo Mẫu {form.code === 'Biểu 09' ? '09' : '12'}</span>
+          )}
         </div>
 
-        {form.status === 'REJECTED' && form.appraisal && (
-          <div className="bg-red-50 border border-red-200 text-red-850 p-5 rounded-2xl flex items-start gap-4 shadow-sm" id={form.code === 'Biểu 09' ? 'rejected-warning-card-09' : 'rejected-warning-card-12'}>
-            <AlertTriangle className="w-5.5 h-5.5 shrink-0 text-red-650 mt-0.5" />
-            <div className="text-xs space-y-1 text-left">
-              <span className="font-extrabold uppercase tracking-wider text-red-800 block">Yêu cầu sửa đổi bổ sung</span>
-              <p className="font-bold leading-relaxed">{form.appraisal.comment}</p>
-              <div className="pt-1.5 flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs uppercase font-black tracking-widest">
-                  Thẩm định: {form.appraisal.appraiserName}
-                </span>
-                <span className="text-xs text-slate-400 flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {new Date(form.appraisal.updatedAt).toLocaleString('vi-VN')}
-                </span>
+        {/* APPRAISAL LOG / PANEL */}
+        {form.status === 'SUBMITTED' && userSession.role === 'APPRAISER' && (
+          <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 p-7 rounded-3xl border border-emerald-500/20 shadow-md space-y-5">
+            <div className="flex items-center gap-3 pb-3 border-b border-emerald-500/10">
+              <div className="p-2.5 bg-emerald-500 text-white rounded-2xl shadow-md">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div className="text-left">
+                <h4 className="text-sm font-black text-emerald-950 uppercase tracking-wider leading-none">HỘI ĐỒNG THẨM ĐỊNH LIÊN NGÀNH QUỐC GIA</h4>
+                <p className="text-xs text-emerald-650 mt-1.5 font-bold uppercase tracking-wider">Thẩm tra thực nghiệm nghiệp vụ, đối chiếu văn bản CA</p>
               </div>
             </div>
-          </div>
-        )}
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left" id={form.code === 'Biểu 09' ? 'title-bar-09' : 'title-bar-12'}>
-          <div className="space-y-1">
-            <h1 className="text-base font-black text-[#0f2942] tracking-tight leading-snug">
-              Mẫu {form.code === 'Biểu 09' ? '09' : '12'}: Kết quả huy động và thực hiện nguồn lực đầu tư thực hiện chương trình 6 tháng / năm ...
-            </h1>
-            <p className="text-xs text-slate-400 font-extrabold flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-amber-550" />
-              Cập nhật lúc: {new Date(form.updatedAt).toLocaleString('vi-VN')} | Đơn vị báo cáo: {form.code === 'Biểu 09' ? 'Cấp Tỉnh' : 'Cấp Xã'}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {isDr && (
-              <button
-                type="button"
-                onClick={handleStartSync}
-                className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-black rounded-2xl flex items-center gap-2 transition-all cursor-pointer border-none shadow-md shadow-amber-900/10"
-                id={form.code === 'Biểu 09' ? 'sync-btn-09' : 'sync-btn-12'}
-              >
-                <RefreshCw className="w-4 h-4 animate-pulse" />
-                Đồng bộ từ ĐTC Bộ Tài chính
-              </button>
-            )}
-            <button
-              onClick={() => {
-                setNotifyMessage("Đang xuất dữ liệu Excel...");
-                setTimeout(() => setNotifyMessage(null), 2500);
-              }}
-              className="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 text-xs font-bold rounded-2xl border border-slate-200 flex items-center gap-2 transition-all cursor-pointer"
-            >
-              <Download className="w-4 h-4 text-slate-500" />
-              Tải mẫu Excel
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.015)] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left min-w-[1600px]">
-              <thead>
-                <tr className="bg-slate-100 text-slate-800 font-black text-xs uppercase tracking-wider text-center border-b border-slate-200">
-                  <th rowSpan={4} className="p-3.5 border-r border-slate-200 w-16 text-center select-none text-[#014285]">TT</th>
-                  <th rowSpan={4} className="p-3.5 border-r border-slate-200 min-w-[280px] text-left sticky left-0 bg-slate-100 font-bold z-10 text-[#014285] shadow-[2px_0_5px_rgba(0,0,0,0.02)]">Nội dung thực hiện</th>
-                  <th rowSpan={4} className="p-3.5 border-r border-slate-200 w-24 text-center text-[#014285]">Khối lượng</th>
-                  <th colSpan={9} className="p-3 border-r border-slate-200 text-center text-[#014285] bg-blue-50/50">Kết quả huy động và thực hiện 6 tháng / năm...</th>
-                  <th colSpan={9} className="p-3 border-r border-slate-200 text-center text-amber-800 bg-amber-50/40">Kế hoạch 6 tháng cuối năm...</th>
-                  <th rowSpan={4} className="p-3.5 border-r border-slate-200 min-w-[200px] text-center text-[#014285]">Ghi chú</th>
-                  {isDr && <th rowSpan={4} className="p-3.5 text-center min-w-[70px] text-red-500">Thao tác</th>}
-                </tr>
-
-                <tr className="bg-slate-50 text-slate-700 font-black border-b border-slate-150 text-center text-xs">
-                  <th rowSpan={3} className="p-2 border-r border-slate-200 text-center w-24 bg-[#e2e8f0]/40 text-slate-800 font-black">Tổng số</th>
-                  <th colSpan={4} className="p-2 border-r border-slate-200 text-center text-slate-800 bg-blue-50/20">Vốn đầu tư trực tiếp</th>
-                  <th rowSpan={3} className="p-2 border-r border-slate-200 text-center w-22 bg-blue-50/20">Lồng ghép</th>
-                  <th rowSpan={3} className="p-2 border-r border-slate-200 text-center w-22 bg-blue-50/20">Tín dụng</th>
-                  <th rowSpan={3} className="p-2 border-r border-slate-200 text-center w-22 bg-blue-50/20">Doanh nghiệp</th>
-                  <th rowSpan={3} className="p-2 border-r border-slate-200 text-center w-22 bg-blue-50/20 font-bold">Dân góp</th>
-                  <th rowSpan={3} className="p-2 border-r border-slate-200 text-center w-24 bg-amber-100/30 text-amber-900 font-black">Tổng số</th>
-                  <th colSpan={4} className="p-2 border-r border-slate-200 text-center text-amber-900 bg-amber-50/20">Vốn đầu tư trực tiếp</th>
-                  <th rowSpan={3} className="p-2 border-r border-slate-200 text-center w-22 bg-amber-50/20">Lồng ghép</th>
-                  <th rowSpan={3} className="p-2 border-r border-slate-200 text-center w-22 bg-amber-50/20">Tín dụng</th>
-                  <th rowSpan={3} className="p-2 border-r border-slate-200 text-center w-22 bg-amber-50/20">Doanh nghiệp</th>
-                  <th rowSpan={3} className="p-2 border-r border-slate-200 text-center w-22 bg-amber-50/20 font-bold">Dân góp</th>
-                </tr>
-
-                <tr className="bg-slate-50 text-slate-600 font-extrabold border-b border-slate-150 text-center text-xs">
-                  <th rowSpan={2} className="p-2 border-r border-slate-200 text-center w-24 bg-blue-50/10">Tổng số</th>
-                  <th colSpan={2} className="p-2 border-r border-slate-200 text-center bg-blue-50/10">NSTW</th>
-                  <th rowSpan={2} className="p-2 border-r border-slate-200 text-center w-24 bg-blue-50/10">NSĐP</th>
-                  <th rowSpan={2} className="p-2 border-r border-slate-200 text-center w-24 bg-amber-50/10">Tổng số</th>
-                  <th colSpan={2} className="p-2 border-r border-slate-200 text-center bg-amber-50/10">NSTW</th>
-                  <th rowSpan={2} className="p-2 border-r border-slate-200 text-center w-24 bg-amber-50/10">NSĐP</th>
-                </tr>
-
-                <tr className="bg-slate-50 text-slate-600 font-extrabold border-b border-slate-150 text-center text-xs tracking-wide">
-                  <th className="p-1.5 border-r border-slate-200 text-center bg-blue-50/10 w-22">ĐTPT</th>
-                  <th className="p-1.5 border-r border-slate-200 text-center bg-blue-50/10 w-22">SN</th>
-                  <th className="p-1.5 border-r border-slate-200 text-center bg-amber-50/10 w-22">ĐTPT</th>
-                  <th className="p-1.5 border-r border-slate-200 text-center bg-amber-50/10 w-22">SN</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-150 text-xs text-slate-700 font-bold">
-                {(form.data || []).map((row: any) => {
-                  if (row.isHeader) {
-                    return (
-                      <tr key={row.id} className="bg-slate-100/90 font-black text-slate-800 border-y border-slate-200 z-10">
-                        <td className="p-3.5 border-r border-slate-150 font-black text-center select-none text-slate-805 text-xs">{row.sectionCode}</td>
-                        <td colSpan={21 + (isDr ? 1 : 0)} className="p-3.5 px-4 sticky left-0 text-left font-black uppercase text-xs text-[#0f2942] tracking-wide bg-slate-100">
-                          <div className="flex items-center justify-between">
-                            <span>{row.category}</span>
-                            {isDr && (
-                              <button
-                                type="button"
-                                onClick={() => handleAddChildRow(row.sectionCode)}
-                                className="px-3.5 py-1.5 text-xs bg-[#014285] hover:bg-[#0252a5] hover:scale-105 active:scale-95 text-white font-black rounded-xl flex items-center gap-1.5 cursor-pointer border-none shadow-sm transition-all"
-                              >
-                                <Plus className="w-3.5 h-3.5" /> Thêm nội dung thành phần
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }
-
-                  const hd_dtpt = Number(row.hd_nstw_dtpt) || 0;
-                  const hd_sn = Number(row.hd_nstw_sn) || 0;
-                  const hd_nsdp = Number(row.hd_nsdp) || 0;
-                  const hd_vdt_tot = hd_dtpt + hd_sn + hd_nsdp;
-                  const hd_tot = hd_vdt_tot + (Number(row.hd_longGhep) || 0) + (Number(row.hd_tinDung) || 0) + (Number(row.hd_doanhNghiep) || 0) + (Number(row.hd_danGop) || 0);
-
-                  const kh_dtpt = Number(row.kh_nstw_dtpt) || 0;
-                  const kh_sn = Number(row.kh_nstw_sn) || 0;
-                  const kh_nsdp = Number(row.kh_nsdp) || 0;
-                  const kh_vdt_tot = kh_dtpt + kh_sn + kh_nsdp;
-                  const kh_tot = kh_vdt_tot + (Number(row.kh_longGhep) || 0) + (Number(row.kh_tinDung) || 0) + (Number(row.kh_doanhNghiep) || 0) + (Number(row.kh_danGop) || 0);
-
-                  let ttDisplay = "";
-                  if (row.parentId) {
-                    const parentTT = parentTTMap[row.parentId] || "";
-                    childCountMap[row.parentId] = (childCountMap[row.parentId] || 0) + 1;
-                    ttDisplay = parentTT ? `${parentTT}.${childCountMap[row.parentId]}` : childCountMap[row.parentId].toString();
-                  } else {
-                    if (row.sectionCode === "I") {
-                      countI++;
-                      ttDisplay = countI.toString();
-                    } else if (row.sectionCode === "II") {
-                      countII++;
-                      ttDisplay = countII.toString();
-                    } else if (row.sectionCode === "III") {
-                      countIII++;
-                      ttDisplay = countIII.toString();
-                    }
-                    parentTTMap[row.id] = ttDisplay;
-                  }
-
-                  return (
-                    <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-2 border-r border-[#e2e8f0] text-center text-slate-500 font-mono font-bold select-none">{ttDisplay}</td>
-
-                      <td className="p-2 border-r border-[#e2e8f0] sticky left-0 bg-white hover:bg-slate-50 transition-colors z-10 shadow-[2px_0_5px_rgba(0,0,0,0.01)] min-w-[320px]">
-                        <div className="flex items-center gap-1.5 w-full">
-                          {row.parentId && (
-                            <span className="text-slate-400 pl-4 shrink-0 font-light select-none">↳</span>
-                          )}
-                          <input
-                            type="text"
-                            value={row.category || ''}
-                            disabled={!isDr}
-                            onChange={(e) => handleInputChange(row.id, 'category', e.target.value)}
-                            className={`w-full text-xs font-bold text-slate-800 bg-transparent border-none outline-none focus:bg-slate-100 hover:bg-slate-50/70 px-2.5 py-1.5 rounded-lg focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all placeholder:font-light ${row.parentId ? 'pl-1 text-slate-600 font-semibold' : ''}`}
-                            placeholder={row.parentId ? "Nhập nội dung con..." : "Nhập nội dung thực hiện..."}
-                          />
-                        </div>
-                      </td>
-
-                      <td className="p-1 px-2 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.quantity ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'quantity', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#2563eb] transition-all"
-                        />
-                      </td>
-
-                      <td className="p-2 border-r border-[#e2e8f0] text-center font-black text-xs text-emerald-600 bg-emerald-50/15">
-                        {hd_tot.toLocaleString('vi-VN')}
-                      </td>
-
-                      <td className="p-2 border-r border-[#e2e8f0] text-center font-extrabold text-xs text-blue-600 bg-slate-50/20">
-                        {hd_vdt_tot.toLocaleString('vi-VN')}
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.hd_nstw_dtpt ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'hd_nstw_dtpt', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.hd_nstw_sn ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'hd_nstw_sn', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.hd_nsdp ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'hd_nsdp', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.hd_longGhep ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'hd_longGhep', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.hd_tinDung ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'hd_tinDung', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.hd_doanhNghiep ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'hd_doanhNghiep', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.hd_danGop ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'hd_danGop', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-2 border-r border-[#e2e8f0] text-center font-black text-xs text-amber-700 bg-amber-50/15">
-                        {kh_tot.toLocaleString('vi-VN')}
-                      </td>
-
-                      <td className="p-2 border-r border-[#e2e8f0] text-center font-extrabold text-xs text-slate-700 bg-slate-50/20">
-                        {kh_vdt_tot.toLocaleString('vi-VN')}
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.kh_nstw_dtpt ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'kh_nstw_dtpt', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-850 focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.kh_nstw_sn ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'kh_nstw_sn', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.kh_nsdp ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'kh_nsdp', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.kh_longGhep ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'kh_longGhep', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.kh_tinDung ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'kh_tinDung', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.kh_doanhNghiep ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'kh_doanhNghiep', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-1.5 border-r border-[#e2e8f0]">
-                        <input
-                          type="number"
-                          value={row.kh_danGop ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'kh_danGop', e.target.value)}
-                          className="w-full text-center py-2 border border-slate-200/80 rounded-xl font-bold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-550 transition-all text-xs"
-                        />
-                      </td>
-
-                      <td className="p-1 px-2 border-r border-[#e2e8f0]">
-                        <input
-                          type="text"
-                          value={row.note || ''}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'note', e.target.value)}
-                          className="w-full text-xs font-bold px-3 py-2 border border-slate-200 rounded-xl hover:bg-white bg-slate-50/40 text-left outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300"
-                          placeholder="Nhập ghi chú..."
-                        />
-                      </td>
-
-                      {isDr && (
-                        <td className="p-1 text-center">
-                          <div className="flex items-center justify-between gap-1 w-full max-w-[60px] mx-auto">
-                            {!row.parentId && (
-                              <button
-                                type="button"
-                                onClick={() => handleAddChildItem(row.id)}
-                                className="text-slate-400 hover:text-[#014285] hover:bg-blue-50/30 p-2 rounded-xl transition-all border-none bg-transparent cursor-pointer flex items-center justify-center"
-                                title="Thêm nội dung con"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteRow(row.id, row.category)}
-                              className="text-slate-400 hover:text-red-500 hover:bg-red-55/10 p-2 rounded-xl transition-all border-none bg-transparent cursor-pointer flex items-center justify-center"
-                              title="Xóa dòng này"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-
-                <tr className="bg-[#014285] text-white font-black hover:bg-[#014285] sticky bottom-0 z-20">
-                  <td className="p-3.5 border-r border-blue-900/40 text-center font-mono text-white text-xs select-none"></td>
-                  <td className="p-3.5 sticky left-0 text-left font-black text-xs uppercase bg-[#014285] text-white tracking-wide border-r border-blue-900/40 shadow-[2px_0_5px_rgba(1,66,133,0.3)]">
-                    TỔNG CỘNG
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-mono text-white text-xs">
-                    {calculatedTotals.quantity.toLocaleString('vi-VN')}
-                  </td>
-
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white text-xs">
-                    {calculatedTotals.hd_tongSo.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/90 text-xs">
-                    {calculatedTotals.hd_vdt_tongSo.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.hd_nstw_dtpt.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.hd_nstw_sn.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.hd_nsdp.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.hd_longGhep.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.hd_tinDung.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.hd_doanhNghiep.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.hd_danGop.toLocaleString('vi-VN')}
-                  </td>
-
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white text-xs">
-                    {calculatedTotals.kh_tongSo.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/90 text-xs">
-                    {calculatedTotals.kh_vdt_tongSo.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.kh_nstw_dtpt.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.kh_nstw_sn.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.kh_nsdp.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.kh_longGhep.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.kh_tinDung.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.kh_doanhNghiep.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-3 text-center border-r border-blue-900/40 font-black text-white/80 text-xs">
-                    {calculatedTotals.kh_danGop.toLocaleString('vi-VN')}
-                  </td>
-
-                  <td className="p-3 border-r border-blue-900/40 font-bold text-white text-xs italic"></td>
-                  {isDr && <td className="p-3 text-center text-white font-black text-sm"></td>}
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-2xl flex items-start gap-4 text-left">
-          <Info className="w-5.5 h-5.5 text-blue-600 shrink-0 mt-0.5" />
-          <div className="text-xs text-slate-600 space-y-1.5 leading-relaxed">
-            <span className="font-extrabold uppercase tracking-wider text-blue-900 block">Lưu ý khi nhập liệu:</span>
-            <ul className="list-disc list-inside space-y-1 pl-1 font-bold">
-              <li>Các ô màu xám nhạt hoặc xanh lá nhạt được tính toán tự động dựa trên tổng số các thành phần nguồn vốn.</li>
-              <li>Đơn vị tiền tệ: <span className="text-[#014285] font-black underline">triệu đồng</span>. Đơn vị khối lượng theo mét hoặc km tùy nội dung thực tế.</li>
-              <li>Đảm bảo các tệp PDF minh chứng đã được đính kèm đầy đủ ở các biểu phụ lục liên quan.</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-md p-4 rounded-3xl border border-slate-200/90 shadow-lg flex flex-wrap items-center justify-between gap-4 sticky bottom-4 z-40">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-black text-slate-500 tracking-wide uppercase">Tự động lưu tạm lúc {new Date(form.updatedAt).toLocaleTimeString('vi-VN')}</span>
-          </div>
-
-          {/* <div className="flex items-center gap-3">
-            <button
-              onClick={onBack}
-              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 active:scale-95 text-slate-600 text-xs font-black rounded-2xl border-none transition-all cursor-pointer"
-            >
-              Quay lại danh sách
-            </button>
-            {isDr && (
-              <>
-                <button
-                  onClick={() => {
-                    setNotifyMessage("Đã lưu tạm báo cáo thành công.");
-                    setTimeout(() => setNotifyMessage(null), 3000);
-                  }}
-                  className="px-5 py-2.5 bg-[#f8fafc] hover:bg-slate-200 border border-slate-200 text-slate-800 text-xs font-black rounded-2xl active:scale-95 transition-all cursor-pointer"
-                >
-                  Lưu nháp
-                </button>
-                <button
-                  onClick={() => {
-                    setDigitalSignInput('');
-                    setShowConfirmPopup(true);
-                  }}
-                  className="px-6 py-2.5 bg-[#014285] hover:bg-[#01356b] text-white text-xs font-black rounded-2xl flex items-center gap-2 active:scale-95 shadow-md shadow-blue-900/10 transition-all cursor-pointer border-none"
-                >
-                  <Send className="w-4 h-4" />
-                  Gửi báo cáo &amp; Ký số
-                </button>
-              </>
-            )}
-          </div> */}
-        </div>
-
-        {showConfirmPopup && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 max-w-sm w-full shadow-2xl relative text-left">
-              <button
-                onClick={() => setShowConfirmPopup(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 border-none bg-transparent cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="text-center space-y-2 mb-5">
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <ShieldCheck className="w-6 h-6 animate-pulse" />
-                </div>
-                <h3 className="text-sm font-black text-[#0f2942] uppercase">Xác thực Ký số điện tử</h3>
-                <p className="text-xs text-slate-400 font-bold leading-normal">
-                  Bạn đang thực hiện ký số báo cáo nguồn vốn {form.code}. Sau khi gửi, số liệu sẽ được chuyển thẳng tới Ban Chỉ Đạo để thẩm định &amp; phê duyệt liên ngành.
-                </p>
-              </div>
-
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!digitalSignInput.trim()) return;
-                  onUpdateForm({
-                    ...form,
-                    status: 'SUBMITTED',
-                    editor: digitalSignInput,
-                    updatedAt: new Date().toISOString(),
-                  });
-                  setShowConfirmPopup(false);
-                  setNotifyMessage(`Biểu mẫu đã được Ký số bởi ${digitalSignInput} và gửi đi phê duyệt thẩm định.`);
-                  setTimeout(() => setNotifyMessage(null), 4000);
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Họ và tên người ký chính chủ <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={digitalSignInput}
-                    onChange={(e) => setDigitalSignInput(e.target.value)}
-                    placeholder="Điền đầy đủ họ và tên..."
-                    className="w-full text-xs p-3 transition-all border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#014285] font-extrabold text-slate-800"
-                  />
-                  <p className="text-xs text-slate-400 mt-2 font-bold leading-normal">
-                    Lưu ý: Bằng việc nhập họ tên, bạn xác nhận số liệu đã kiểm kê khớp thực địa và chịu trách nhiệm pháp lý về số liệu báo cáo này.
-                  </p>
-                </div>
-
-                <div className="flex gap-3 pt-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPopup(false)}
-                    className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer bg-white"
-                  >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-3 bg-[#014285] hover:bg-[#01356b] text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-blue-900/10 cursor-pointer border-none"
-                  >
-                    Chấp thuận &amp; Ký số
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-        {renderSyncModal()}
-      </div>
-    );
-  }
-
-  if (form.code === 'Biểu 08' || form.code === 'Biểu 13') {
-    const isDr = form.status === 'DRAFT' || form.status === 'REJECTED';
-
-    // Calculate sums
-    const sumPlan = form.data.reduce((acc, row) => acc + (row.group1?.prevYear || 0), 0);
-    const sumResult = form.data.reduce((acc, row) => acc + (row.group1?.currentS1 || 0), 0);
-    const sumPercent = sumPlan > 0 ? Math.round((sumResult / sumPlan) * 100) : 0;
-
-    return (
-      <div className="space-y-6 animate-fade-in text-slate-800 font-sans pb-12" id={form.code === 'Biểu 08' ? 'bieu-08-view' : 'bieu-13-view'}>
-        {/* Toast alert */}
-        {notifyMessage && (
-          <div className="fixed bottom-6 right-6 bg-slate-900/95 backdrop-blur-md border border-slate-800 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3.5 z-50 max-w-sm transition-all duration-350" id={form.code === 'Biểu 08' ? 'toast-notify-08' : 'toast-notify-13'}>
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span className="text-xs font-bold leading-relaxed">{notifyMessage}</span>
-            <button onClick={() => setNotifyMessage(null)} className="ml-auto text-white/40 hover:text-white transition-colors border-none bg-transparent cursor-pointer">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Breadcrumbs */}
-        <div className="text-xs text-slate-400 font-bold mb-1 flex items-center gap-1.5 flex-wrap uppercase tracking-wider text-left" id={form.code === 'Biểu 08' ? 'bieu-08-breadcrumb' : 'bieu-13-breadcrumb'}>
-          <button onClick={onBackToPeriods || onBack} className="hover:text-amber-500 cursor-pointer transition-colors border-none bg-transparent font-bold">
-            Đợt báo cáo
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <button onClick={onBack} className="hover:text-amber-500 cursor-pointer transition-colors border-none bg-transparent font-bold">
-            Chi tiết đợt báo cáo
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <span className="text-[#014285] font-black">Báo cáo Mẫu {form.code === 'Biểu 08' ? '08' : '13'}</span>
-        </div>
-
-        {/* Warning card for Rejected state */}
-        {form.status === 'REJECTED' && form.appraisal && (
-          <div className="bg-red-50 border border-red-200 text-red-800 p-5 rounded-2xl flex items-start gap-4 shadow-sm animate-pulse-subtle" id={form.code === 'Biểu 08' ? 'rejected-warning-card-08' : 'rejected-warning-card-13'}>
-            <AlertCircle className="w-5.5 h-5.5 shrink-0 text-red-650 mt-0.5" />
-            <div className="text-xs space-y-1 text-left">
-              <span className="font-extrabold uppercase tracking-wider text-red-905 block">Yêu cầu sửa đổi bổ sung</span>
-              <p className="font-bold leading-relaxed">{form.appraisal.comment}</p>
-              <div className="pt-1.5 flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs uppercase font-black tracking-widest">
-                  Thẩm định: {form.appraisal.appraiserName}
-                </span>
-                <span className="text-xs text-slate-400 flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {new Date(form.appraisal.updatedAt).toLocaleString('vi-VN')}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Title view bar of Biểu 08/13 as screenshot */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left" id={form.code === 'Biểu 08' ? 'title-bar-08' : 'title-bar-13'}>
-          <div className="space-y-1">
-            <h1 className="text-base font-black text-[#0f2942] tracking-tight leading-snug">
-              Nhập liệu {form.code} - {form.title}
-            </h1>
-            <div className="flex items-center gap-2 flex-wrap text-xs font-bold text-slate-400">
-              <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-xl border border-amber-100/60 inline-flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                {form.status === 'DRAFT' ? 'Đang soạn thảo' : form.status === 'REJECTED' ? 'Bị trả lại' : form.status === 'SUBMITTED' ? 'Chờ thẩm định' : 'Đã phê duyệt'}
-              </span>
-              <span>&bull;</span>
-              <span>Cập nhật lần cuối: {new Date(form.updatedAt || '2024-10-25T14:30:00Z').toLocaleString('vi-VN')}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 self-stretch md:self-auto shrink-0 justify-end">
-            <button
-              onClick={() => {
-                setNotifyMessage(`Đang tải lịch sử chỉnh sửa biểu mẫu ${form.code === 'Biểu 08' ? '08' : '13'} từ hệ thống...`);
-                setTimeout(() => setNotifyMessage(null), 2500);
-              }}
-              className="px-4 py-2 border border-slate-250 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-2xl cursor-pointer transition-all flex items-center gap-2"
-              id={form.code === 'Biểu 08' ? 'history-btn-08' : 'history-btn-13'}
-            >
-              <History className="w-4 h-4 text-slate-500" />
-              Lịch sử chỉnh sửa
-            </button>
-          </div>
-        </div>
-
-        {/* Dynamic Spreadsheet Table wrapper styled elegantly like the screenshot */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden" id={form.code === 'Biểu 08' ? 'spreadsheet-wrapper-08' : 'spreadsheet-wrapper-13'}>
-          <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/20 text-left">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#014285]" />
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                {form.title}
-              </h3>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-start sm:justify-end mt-2 sm:mt-0">
-              {isDr && (
-                <>
-                  <button
-                    onClick={() => {
-                      const maxId = form.data.reduce((max, r) => Math.max(max, Number(r.id) || 0), 0);
-                      const newRowId = maxId + 1;
-                      const newRow: CriterionRow = {
-                        id: newRowId,
-                        category: `Công trình hạ tầng mới ${newRowId}`,
-                        unit: "Công trình",
-                        group1: { prevYear: 0, currentS1: 0, planS2: 0 },
-                        group2: { prevYear: 0, currentS1: 0, planS2: 0 },
-                        group3: { prevYear: 0, currentS1: 0, planS2: 0 },
-                        note: ""
-                      };
-                      onUpdateForm({
-                        ...form,
-                        data: [...form.data, newRow],
-                        updatedAt: new Date().toISOString()
-                      });
-                      setNotifyMessage(`Đã thêm 1 công trình mới thành công!`);
-                      setTimeout(() => setNotifyMessage(null), 3000);
-                    }}
-                    className="px-4 py-2 bg-[#014285] hover:bg-[#01356b] text-white text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-blue-900/10 border-none mr-2 font-bold whitespace-nowrap"
-                    id={form.code === 'Biểu 08' ? 'add-btn-08' : 'add-btn-13'}
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Thêm công trình
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleStartSync}
-                    className="px-4 py-2 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-amber-900/10 border-none mr-2 font-bold whitespace-nowrap"
-                    id={form.code === 'Biểu 08' ? 'sync-btn-08' : 'sync-btn-13'}
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 animate-pulse" />
-                    Đồng bộ từ ĐTC Bộ Tài chính
-                  </button>
-                </>
-              )}
-              <span className="text-xs text-slate-400 font-bold italic whitespace-nowrap">
-                Đơn vị tính: Triệu đồng (VNĐ)
-              </span>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto text-left">
-            <table className="w-full text-xs text-left border-collapse border-b border-slate-100 min-w-[980px]">
-              <thead>
-                <tr className="bg-slate-50 text-slate-600 uppercase text-xs font-black tracking-wider border-b border-slate-150 text-center">
-                  <th className="py-4 px-3 border-r border-slate-150 text-center w-14">TT</th>
-                  <th className="py-4 px-5 border-r border-slate-150 text-left min-w-[280px]">
-                    Công trình
-                  </th>
-                  <th className="py-4 px-3 border-r border-slate-150 w-[170px]">
-                    Kế hoạch năm...
-                  </th>
-                  <th className="py-4 px-3 border-r border-slate-150 w-[170px]">
-                    Kết quả thực hiện hằng năm / năm...
-                  </th>
-                  <th className="py-4 px-3 border-r border-slate-150 w-[170px]">Gắn kết hoàn thành (%)</th>
-                  <th className="py-4 px-5 text-left border-r border-slate-150">Ghi chú</th>
-                  {isDr && <th className="py-4 px-3 text-center w-16">Xóa</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {/* TỔNG CỘNG row at the top of table body, as shown in the screenshot */}
-                <tr className="bg-blue-50/25 uppercase text-xs font-black border-b-2 border-slate-150 text-slate-800">
-                  <td className="py-4 px-3 text-center border-r border-slate-150">-</td>
-                  <td className="py-4 px-5 border-r border-slate-150 tracking-tight">TỔNG CỘNG SỐ LIỆU</td>
-
-                  {/* Total Plan */}
-                  <td className="py-4 px-3 text-center border-r border-slate-150 font-black font-mono text-sm text-[#014285]">
-                    {sumPlan.toLocaleString('vi-VN')},00
-                  </td>
-
-                  {/* Total Result */}
-                  <td className="py-4 px-3 text-center border-r border-slate-150 font-black font-mono text-sm text-[#014285]">
-                    {sumResult.toLocaleString('vi-VN')},00
-                  </td>
-
-                  {/* Total Percent */}
-                  <td className="py-4 px-3 text-center border-r border-slate-150 font-black font-mono text-sm text-emerald-600">
-                    {sumPercent}%
-                  </td>
-
-                  <td className="py-4 px-5 bg-slate-50/50 font-bold text-slate-400 text-xs italic text-left border-r border-slate-150">
-                    Tự động lũy kế
-                  </td>
-
-                  {isDr && <td className="py-4 px-3 bg-slate-50/50 text-center">-</td>}
-                </tr>
-
-                {(form.data || []).map((row, idx) => {
-                  const percent = row.group1?.prevYear > 0
-                    ? Math.round((row.group1.currentS1 / row.group1.prevYear) * 100)
-                    : 0;
-
-                  return (
-                    <tr key={row.id} className="hover:bg-slate-50/35 transition-colors font-semibold">
-                      <td className="py-3 px-3 text-center border-r border-slate-150 text-slate-400 font-bold font-mono">
-                        {idx + 1}
-                      </td>
-                      <td className="py-1 px-3 border-r border-slate-[#e2e8f0] text-slate-850 text-left min-w-[280px]">
-                        {isDr ? (
-                          <div className="space-y-1 py-1">
-                            <input
-                              type="text"
-                              value={row.category}
-                              onChange={(e) => {
-                                const updated = form.data.map(r => r.id === row.id ? { ...r, category: e.target.value } : r);
-                                onUpdateForm({ ...form, data: updated, updatedAt: new Date().toISOString() });
-                              }}
-                              className="w-full text-xs px-2.5 py-1.5 border border-slate-200/80 rounded-xl font-extrabold text-slate-800 bg-white hover:border-slate-350 focus:border-[#2563eb] outline-none transition-all text-left"
-                              placeholder="Tên công trình..."
-                            />
-                          </div>
-                        ) : (
-                          <div className="px-2.5 py-1 text-left">
-                            <span className="font-extrabold text-slate-855 block leading-relaxed">{row.category}</span>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Kế hoạch năm / Năm trước */}
-                      <td className="p-1 px-3 border-r border-[#e2e8f0] text-center">
-                        <input
-                          type="number"
-                          value={row.group1?.prevYear ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'group1', 'prevYear', e.target.value)}
-                          className={`w-full text-center py-2.5 border rounded-xl font-extrabold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#2563eb] transition-all border-slate-200/85 ${cellFlashes[`${row.id}-group1-prevYear`] ? 'bg-amber-100' : ''
-                            }`}
-                        />
-                      </td>
-
-                      {/* Kết quả thực hiện */}
-                      <td className="p-1 px-3 border-r border-[#e2e8f0] text-center">
-                        <input
-                          type="number"
-                          value={row.group1?.currentS1 ?? 0}
-                          disabled={!isDr}
-                          onChange={(e) => handleInputChange(row.id, 'group1', 'currentS1', e.target.value)}
-                          className={`w-full text-center py-2.5 border rounded-xl font-extrabold bg-white text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#2563eb] transition-all border-slate-200/85 ${cellFlashes[`${row.id}-group1-currentS1`] ? 'bg-amber-100' : ''
-                            }`}
-                        />
-                      </td>
-
-                      {/* Phần trăm hoàn thành */}
-                      <td className="p-1 px-4 border-r border-[#e2e8f0] text-center font-bold font-mono text-slate-700 bg-slate-50/30">
-                        <div className="flex items-center justify-center gap-1.5 h-10 w-full bg-slate-100/50 rounded-xl border border-slate-200/50">
-                          <span className="font-black text-xs">{percent} %</span>
-                        </div>
-                      </td>
-
-                      {/* Ghi chú */}
-                      <td className="px-5 py-1 text-left bg-slate-50/10 border-r border-slate-150">
-                        <input
-                          type="text"
-                          value={row.note || ''}
-                          disabled={!isDr}
-                          placeholder="Nhập ghi chú..."
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const updated = form.data.map(r => r.id === row.id ? { ...r, note: val } : r);
-                            onUpdateForm({ ...form, data: updated, updatedAt: new Date().toISOString() });
-                          }}
-                          className="w-full text-xs px-3.5 py-2.5 border border-slate-200/70 rounded-xl font-bold text-slate-855 hover:bg-white bg-slate-50/40 text-left outline-none focus:border-[#2563eb] focus:bg-white transition-all placeholder:text-slate-350"
-                        />
-                      </td>
-
-                      {/* Delete action button */}
-                      {isDr && (
-                        <td className="py-2.5 px-2 text-center bg-slate-50/5">
-                          <button
-                            onClick={() => {
-                              const updated = form.data.filter(r => r.id !== row.id);
-                              onUpdateForm({
-                                ...form,
-                                data: updated,
-                                updatedAt: new Date().toISOString()
-                              });
-                              setNotifyMessage(`Đã xóa công trình: "${row.category}"`);
-                              setTimeout(() => setNotifyMessage(null), 3000);
-                            }}
-                            className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-all border-none bg-transparent cursor-pointer flex items-center justify-center mx-auto"
-                            title="Xóa công trình này"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Bottom details block matching the first screenshot */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 text-left">
-          {/* Card: Hướng dẫn nhập liệu */}
-          <div className="lg:col-span-4 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between" id={form.code === 'Biểu 08' ? 'guide-panel-08' : 'guide-panel-13'}>
             <div className="space-y-4">
-              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                <BookmarkCheck className="w-4 h-4 text-[#014285]" />
-                Hướng dẫn nhập liệu
-              </h4>
-              <p className="text-xs text-slate-500 font-bold leading-relaxed">
-                Vui lòng nhập giá trị bằng số nguyên cho các cột kế hoạch và kết quả hằng năm. Tỷ lệ phần trăm sẽ tự động tính toán dựa trên số liệu thực tế đã lưu trực tiếp.
-              </p>
-            </div>
-          </div>
-
-          {/* Card: Tài liệu đính kèm */}
-          <div className="lg:col-span-4 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between" id={form.code === 'Biểu 08' ? 'attachment-panel-08' : 'attachment-panel-13'}>
-            <div className="space-y-4">
-              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[#014285]" />
-                Tài liệu đính kèm
-              </h4>
-
-              {form.proofFiles && form.proofFiles.length > 0 ? (
-                <div className="space-y-2 mb-2 animate-fade-in">
-                  {form.proofFiles.map((file, i) => (
-                    <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100/50 rounded-xl border border-slate-200 transition-all">
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        <FileText className="w-4 h-4 text-[#014285]" />
-                        <span className="text-xs font-bold text-slate-700 truncate">{file.name}</span>
-                      </div>
-                      {isDr && (
-                        <button
-                          onClick={() => handleDeleteFile(file.name)}
-                          className="text-slate-400 hover:text-red-500 hover:bg-slate-150 p-1 rounded-lg border-none bg-transparent cursor-pointer ml-1"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
-              {isDr ? (
-                <div
-                  onClick={() => {
-                    const mockFile: ProofFile = {
-                      name: `Quyet_Dinh_Dau_Tu_Cong_${form.code === 'Biểu 08' ? 'Bo08' : 'Bo13'}_SignCert.pdf`,
-                      size: 1850124,
-                      uploadedAt: new Date().toISOString().split('T')[0],
-                      type: 'pdf'
-                    };
-                    onUpdateForm({
-                      ...form,
-                      proofFiles: [...(form.proofFiles || []), mockFile],
-                      updatedAt: new Date().toISOString()
-                    });
-                    setNotifyMessage('Đã tải lên tệp đính kèm Quyết định đầu tư thành công!');
-                    setTimeout(() => setNotifyMessage(null), 3000);
-                  }}
-                  className="border-2 border-dashed border-slate-200 hover:border-[#014285] bg-slate-50/50 hover:bg-blue-50/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group h-28"
-                >
-                  <Plus className="w-6 h-6 text-slate-400 mb-1.5 group-hover:text-[#014285] transition-colors" />
-                  <p className="text-xs text-slate-600 font-extrabold">
-                    Kéo thả hoặc tải lên Quyết định đầu tư (PDF)
-                  </p>
-                </div>
-              ) : (
-                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-center text-slate-400 text-xs font-bold">
-                  Chế độ chỉ xem. Đính kèm khóa chặt.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Img Graphic Card matching screenshot quote */}
-          <div className="lg:col-span-4 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col justify-center items-center text-center" id={form.code === 'Biểu 08' ? 'quote-panel-08' : 'quote-panel-13'}>
-            <div className="relative w-full max-w-[130px] h-20 rounded-xl overflow-hidden shadow-sm bg-slate-100 border border-slate-200 mb-3 flex items-center justify-center">
-              <ShieldCheck className="w-12 h-12 text-[#014285] opacity-80 animate-pulse" />
-            </div>
-            <p className="text-xs text-slate-500 italic font-bold max-w-[200px] leading-relaxed">
-              "Số liệu chính xác là nền tảng cho sự phát triển bền vững."
-            </p>
-          </div>
-        </div>
-
-        {/* Action sticky bar like Biểu 06 */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-in text-left" id={form.code === 'Biểu 08' ? 'action-bar-08' : 'action-bar-13'}>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 text-[#014285] rounded-xl shrink-0">
-              <ShieldAlert className="w-4.5 h-4.5" />
-            </div>
-            <p className="text-xs font-extrabold text-[#014285]">
-              Mọi dữ liệu thay đổi trên bảng biểu này sẽ được lưu tự động bản nháp.
-            </p>
-          </div>
-
-          {/* <div className="flex items-center gap-3.5 w-full sm:w-auto justify-end">
-            <button
-              onClick={() => {
-                setNotifyMessage(`Đã tiến hành lưu trữ bản nháp ${form.code} thành công!`);
-                setTimeout(() => setNotifyMessage(null), 3000);
-              }}
-              className="px-5 py-2.5 border border-slate-300 text-slate-700 bg-white rounded-2xl text-xs font-black hover:bg-slate-50 transition-all cursor-pointer whitespace-nowrap font-bold"
-            >
-              Lưu nháp
-            </button>
-
-            {isDr ? (
-              <button
-                onClick={() => setShowConfirmPopup(true)}
-                className="px-5 py-2.5 bg-[#014285] hover:bg-[#01356b] text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-blue-900/15 cursor-pointer whitespace-nowrap flex items-center gap-2 font-bold"
-                id={form.code === 'Biểu 08' ? 'submit-form-08-btn' : 'submit-form-13-btn'}
-              >
-                <Send className="w-4 h-4" />
-                Gửi báo cáo
-              </button>
-            ) : null}
-          </div> */}
-        </div>
-
-        {/* Digital Signature Confirmation Popup Modal */}
-        {showConfirmPopup && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="bg-white rounded-3xl max-w-md w-full border border-slate-150 p-6 shadow-2xl relative animate-scale-up text-left">
-              <button
-                onClick={() => setShowConfirmPopup(false)}
-                className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 border-none bg-transparent cursor-pointer p-1"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="text-center space-y-3 mb-6">
-                <div className="w-12 h-12 bg-blue-50 text-[#014285] rounded-full flex items-center justify-center mx-auto mb-3">
-                  <ShieldCheck className="w-6 h-6 animate-pulse" />
-                </div>
-                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Ký số &amp; Gửi duyệt báo cáo</h3>
-                <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-                  Bản báo cáo <strong className="font-bold text-slate-750">{form.code}</strong> sẽ được gửi trực tiếp lên ban chỉ đạo Trung ương phê duyệt thẩm định.
-                </p>
+              <div className="text-left">
+                <label className="block text-xs font-black text-emerald-800 uppercase tracking-wider mb-1.5">Nhận xét của Hội đồng Thẩm định liên ngành</label>
+                <textarea
+                  value={appraisalComment}
+                  onChange={(e) => setAppraisalComment(e.target.value)}
+                  placeholder="Ghi rõ ý kiến kiểm toán tính đúng đắn của số liệu, mức độ phản ánh thực tiễn các tiêu chí..."
+                  rows={3}
+                  className="w-full text-xs p-3.5 bg-white border border-emerald-205 focus:border-emerald-550 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 text-slate-800 font-bold placeholder:text-slate-400"
+                />
               </div>
 
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!digitalSignInput.trim()) {
-                    alert('Vui lòng điền họ và tên người ký xác nhận.');
-                    return;
-                  }
-                  onUpdateForm({
-                    ...form,
-                    status: 'SUBMITTED',
-                    editor: digitalSignInput,
-                    updatedAt: new Date().toISOString(),
-                  });
-                  setShowConfirmPopup(false);
-                  setNotifyMessage(`Biểu mẫu đã được Ký số bởi ${digitalSignInput} và gửi đi phê duyệt thẩm định.`);
-                  setTimeout(() => setNotifyMessage(null), 4000);
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Họ và tên người ký chính chủ <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={digitalSignInput}
-                    onChange={(e) => setDigitalSignInput(e.target.value)}
-                    placeholder="Điền đầy đủ họ và tên..."
-                    className="w-full text-xs p-3 transition-all border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#014285] font-extrabold text-slate-800"
-                  />
-                  <p className="text-xs text-slate-400 mt-2 font-bold leading-normal">
-                    Lưu ý: Bằng việc nhập họ tên, bạn xác nhận số liệu đã kiểm kê khớp thực địa và chịu trách nhiệm pháp lý về số liệu báo cáo này.
-                  </p>
-                </div>
-
-                <div className="flex gap-3 pt-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPopup(false)}
-                    className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer bg-white"
-                  >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-3 bg-[#014285] hover:bg-[#01356b] text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-blue-900/10 cursor-pointer"
-                  >
-                    Chấp thuận &amp; Ký số
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-        {renderSyncModal()}
-      </div>
-    );
-  }
-
-  if (form.code === 'Biểu 07' || form.code === 'Biểu 11') {
-    const isDr = form.status === 'DRAFT' || form.status === 'REJECTED';
-    const flashPrefix = form.code === 'Biểu 11' ? '11-' : '07-';
-
-    return (
-      <div className="space-y-6 animate-fade-in text-slate-800 font-sans pb-12">
-        {/* Toast alert */}
-        {notifyMessage && (
-          <div className="fixed bottom-6 right-6 bg-slate-900/95 backdrop-blur-md border border-slate-800 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3.5 z-50 max-w-sm transition-all duration-350">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span className="text-xs font-bold leading-relaxed">{notifyMessage}</span>
-            <button onClick={() => setNotifyMessage(null)} className="ml-auto text-white/40 hover:text-white transition-colors border-none bg-transparent cursor-pointer">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Breadcrumbs */}
-        <div className="text-xs text-slate-400 font-bold mb-1 flex items-center gap-1.5 flex-wrap uppercase tracking-wider">
-          <button onClick={onBackToPeriods || onBack} className="hover:text-amber-500 cursor-pointer transition-colors border-none bg-transparent">
-            Đợt báo cáo
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <button onClick={onBack} className="hover:text-amber-500 cursor-pointer transition-colors border-none bg-transparent">
-            Chi tiết đợt báo cáo
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <span className="text-[#014285] font-black">Báo cáo Mẫu {form.code === 'Biểu 11' ? '11' : '07'}</span>
-        </div>
-
-        {/* Warning card for Rejected state */}
-        {form.status === 'REJECTED' && form.appraisal && (
-          <div className="bg-red-50 border border-red-200 text-red-800 p-5 rounded-2xl flex items-start gap-4 shadow-sm">
-            <AlertCircle className="w-5.5 h-5.5 shrink-0 text-red-650 mt-0.5" />
-            <div className="text-xs space-y-1">
-              <span className="font-extrabold uppercase tracking-wider text-red-900 block">Yêu cầu điều chỉnh số liệu</span>
-              <p className="font-bold leading-relaxed">{form.appraisal.comment}</p>
-              <div className="pt-1.5 flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs uppercase font-black tracking-widest">
-                  Thẩm định viên: {form.appraisal.appraiserName}
-                </span>
-                <span className="text-xs text-slate-400 flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {new Date(form.appraisal.updatedAt).toLocaleString('vi-VN')}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Header Block matching screenshot layout */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-[0_2px_15px_rgba(0,0,0,0.01)]">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <span className="text-xs uppercase font-black bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md border border-slate-200 tracking-wider">
-                {form.code === 'Biểu 11' ? 'Phụ Biểu số 11 (Xã)' : 'Phụ Biểu số 07 (Tỉnh)'}
-              </span>
-              <h1 className="text-lg font-black text-[#0f2942] tracking-tight mt-2 uppercase">
-                {form.title || 'Tổng hợp kết quả huy động nguồn lực thực hiện chương trình'}
-              </h1>
-              <span className="text-xs text-slate-400 font-extrabold block mt-1 tracking-wider italic">
-                ĐVT: Triệu đồng
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2.5 self-end md:self-center">
-              {isDr && (
+              <div className="flex flex-wrap gap-3 justify-end pt-1">
                 <button
-                  type="button"
-                  onClick={handleStartSync}
-                  className="px-4 py-2 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-amber-900/10 border-none mr-2 font-bold"
-                  id={form.code === 'Biểu 07' ? 'sync-btn-07' : 'sync-btn-11'}
+                  onClick={() => handleAppraise('REJECTED')}
+                  className="px-5 py-3 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer"
                 >
-                  <RefreshCw className="w-3.5 h-3.5 animate-pulse" />
-                  Đồng bộ từ ĐTC Bộ Tài chính
+                  Trả phụ biểu về xã biên soạn lại
                 </button>
-              )}
-              {form.status === 'DRAFT' && (
-                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-100 text-xs font-black uppercase tracking-wider">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Đang thực hiện
-                </span>
-              )}
-              {form.status === 'REJECTED' && (
-                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg border border-red-150 text-xs font-black uppercase tracking-wider">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  Bị trả lại
-                </span>
-              )}
-              {form.status === 'SUBMITTED' && (
-                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-150 text-xs font-black uppercase tracking-wider animate-pulse">
-                  <Clock className="w-3.5 h-3.5" />
-                  Chờ thẩm định
-                </span>
-              )}
-              {form.status === 'APPROVED' && (
-                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-55/15 text-emerald-700 rounded-lg border border-emerald-150 text-xs font-black uppercase tracking-wider">
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                  Đã phê duyệt
-                </span>
-              )}
-              {form.status === 'SUPERVISED' && (
-                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 text-violet-700 rounded-lg border border-violet-150 text-xs font-black uppercase tracking-wider">
-                  <Activity className="w-3.5 h-3.5" />
-                  Đã giám sát
-                </span>
-              )}
+                <button
+                  onClick={() => handleAppraise('APPROVED')}
+                  className="px-7 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-600/15 hover:shadow-[0_4px_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer"
+                >
+                  Phê chuẩn &amp; Đạt chuẩn tiêu chí quốc gia
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Resources Table representation of the screenshot */}
-        <div className="bg-white rounded-2xl border border-slate-200/95 shadow-[0_2px_20px_rgba(0,0,0,0.015)] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left min-w-[1040px]">
-              <thead>
-                <tr className="bg-slate-50 text-slate-800 font-black text-xs border-b border-slate-200">
-                  <th className="px-4 py-4.5 border-r border-slate-150 text-center w-14">STT</th>
-                  <th className="px-6 py-4.5 border-r border-slate-150 min-w-[280px]">NỘI DUNG CHI TIÊU</th>
-                  <th className="px-4 py-4.5 border-r border-slate-150 text-center w-40">KẾ HOẠCH NĂM 2024</th>
-                  <th className="px-4 py-4.5 border-r border-slate-150 text-center w-40">6 THÁNG ĐẦU NĂM</th>
-                  <th className="px-4 py-4.5 border-r border-slate-150 text-center w-40">6 THÁNG CUỐI NĂM (DỰ KIẾN)</th>
-                  <th className="px-4 py-4.5 border-r border-slate-150 text-center w-40 bg-slate-50/50">ƯỚC THỰC HIỆN CẢ NĂM</th>
-                  <th className="px-4 py-4.5 text-center w-40 bg-blue-50/35 text-[#014285]">TỶ LỆ GIẢI NGÂN (%)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-150 text-xs text-slate-700 font-semibold">
-
-                {/* TỔNG SỐ level 0 */}
-                <tr className="bg-slate-50/70 text-slate-900 font-extrabold border-b border-slate-200">
-                  <td className="px-4 py-4.5 border-r border-slate-150 text-center font-mono"></td>
-                  <td className="px-6 py-4.5 border-r border-slate-150 text-slate-900 font-black tracking-wide uppercase">TỔNG SỐ</td>
-                  <td className="px-4 py-4.5 border-r border-slate-150 text-center font-black text-sm">{computedTable07.tong.plan.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4.5 border-r border-slate-150 text-center font-black text-sm">{computedTable07.tong.first.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4.5 border-r border-slate-150 text-center font-black text-sm">{computedTable07.tong.second.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4.5 border-r border-slate-150 text-center font-black text-sm bg-slate-150/20">{computedTable07.tong.total.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4.5 text-center text-blue-700 font-black bg-blue-50/50 text-sm">
-                    {computedTable07.tong.percent.toFixed(1)}%
-                  </td>
-                </tr>
-
-                {/* NGÂN SÁCH TRUNG ƯƠNG Level 1 */}
-                <tr className="bg-slate-50/25 text-slate-800 font-bold">
-                  <td className="px-4 py-4 border-r border-slate-150 text-center font-mono text-slate-800">I</td>
-                  <td className="px-6 py-4 border-r border-slate-150 uppercase text-slate-800 font-black tracking-wide">NGÂN SÁCH TRUNG ƯƠNG</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center text-slate-800 font-bold">{computedTable07.i.plan.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center text-slate-800 font-bold">{computedTable07.i.first.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center text-slate-800 font-bold">{computedTable07.i.second.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center bg-slate-50/10 text-slate-800 font-bold">{computedTable07.i.total.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 text-center text-blue-600 font-bold bg-blue-50/10">
-                    {computedTable07.i.percent.toFixed(1)}%
-                  </td>
-                </tr>
-
-                {/* Vốn đầu tư công Level 2 */}
-                <tr className="hover:bg-slate-50/35 transition-colors">
-                  <td className="px-4 py-3 border-r border-slate-150 text-center font-mono text-slate-400">1</td>
-                  <td className="px-6 py-3 border-r border-slate-150 text-slate-700 pl-10 font-bold">Vốn đầu tư công</td>
-
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.i1_plan}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('i1_plan', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'i1_plan'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.i1_first}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('i1_first', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'i1_first'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.i1_second}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('i1_second', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'i1_second'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="text"
-                      disabled
-                      value={(resourceRows07.i1_first + resourceRows07.i1_second).toLocaleString('vi-VN')}
-                      placeholder="Tính tự động..."
-                      className="w-full text-center py-2 border border-slate-100 rounded-lg font-bold bg-slate-50 text-slate-550 cursor-not-allowed select-none"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-center text-slate-400 font-bold text-xs italic bg-blue-50/5">
-                    Tính tự động...
-                  </td>
-                </tr>
-
-                {/* Kinh phí thường xuyên Level 2 */}
-                <tr className="hover:bg-slate-50/35 transition-colors">
-                  <td className="px-4 py-3 border-r border-slate-150 text-center font-mono text-slate-400">2</td>
-                  <td className="px-6 py-3 border-r border-slate-150 text-slate-700 pl-10 font-bold">Kinh phí thường xuyên</td>
-
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.i2_plan}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('i2_plan', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'i2_plan'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.i2_first}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('i2_first', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'i2_first'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.i2_second}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('i2_second', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'i2_second'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="text"
-                      disabled
-                      value={(resourceRows07.i2_first + resourceRows07.i2_second).toLocaleString('vi-VN')}
-                      placeholder="Tính tự động..."
-                      className="w-full text-center py-2 border border-slate-100 rounded-lg font-bold bg-slate-50 text-slate-550 cursor-not-allowed select-none"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-center text-slate-400 font-bold text-xs italic bg-blue-50/5">
-                    Tính tự động...
-                  </td>
-                </tr>
-
-                {/* NGÂN SÁCH ĐỊA PHƯƠNG Level 1 */}
-                <tr className="bg-slate-50/25 text-slate-800 font-bold">
-                  <td className="px-4 py-4 border-r border-slate-150 text-center font-mono text-slate-800">II</td>
-                  <td className="px-6 py-4 border-r border-slate-150 uppercase text-slate-800 font-black tracking-wide">NGÂN SÁCH ĐỊA PHƯƠNG</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center text-slate-800 font-bold">{computedTable07.ii.plan.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center text-slate-800 font-bold">{computedTable07.ii.first.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center text-slate-800 font-bold">{computedTable07.ii.second.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center bg-slate-50/10 text-slate-800 font-bold">{computedTable07.ii.total.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 text-center text-blue-600 font-bold bg-blue-50/10">
-                    {computedTable07.ii.percent.toFixed(1)}%
-                  </td>
-                </tr>
-
-                {/* Cấp Tỉnh Level 2 */}
-                <tr className="hover:bg-slate-50/35 transition-colors">
-                  <td className="px-4 py-3 border-r border-slate-150 text-center font-mono text-slate-400">1</td>
-                  <td className="px-6 py-3 border-r border-slate-150 text-slate-700 pl-10 font-bold">Cấp Tỉnh</td>
-
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.ii1_plan}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('ii1_plan', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'ii1_plan'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.ii1_first}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('ii1_first', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'ii1_first'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.ii1_second}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('ii1_second', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'ii1_second'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="text"
-                      disabled
-                      value={(resourceRows07.ii1_first + resourceRows07.ii1_second).toLocaleString('vi-VN')}
-                      placeholder="Tính tự động..."
-                      className="w-full text-center py-2 border border-slate-100 rounded-lg font-bold bg-slate-50 text-slate-550 cursor-not-allowed select-none"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-center text-slate-400 font-bold text-xs italic bg-blue-50/5">
-                    Tính tự động...
-                  </td>
-                </tr>
-
-                {/* Cấp Xã Level 2 */}
-                <tr className="hover:bg-slate-50/35 transition-colors">
-                  <td className="px-4 py-3 border-r border-slate-150 text-center font-mono text-slate-400">2</td>
-                  <td className="px-6 py-3 border-r border-slate-150 text-slate-700 pl-10 font-bold">Cấp Xã</td>
-
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.ii2_plan}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('ii2_plan', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'ii2_plan'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.ii2_first}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('ii2_first', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-355 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'ii2_first'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.ii2_second}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('ii2_second', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-355 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'ii2_second'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="text"
-                      disabled
-                      value={(resourceRows07.ii2_first + resourceRows07.ii2_second).toLocaleString('vi-VN')}
-                      placeholder="Tính tự động..."
-                      className="w-full text-center py-2 border border-slate-100 rounded-lg font-bold bg-slate-50 text-slate-550 cursor-not-allowed select-none"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-center text-slate-400 font-bold text-xs italic bg-blue-50/5">
-                    Tính tự động...
-                  </td>
-                </tr>
-
-                {/* VỐN LỒNG GHÉP Level 1 */}
-                <tr className="bg-slate-50/15 border-slate-150 font-bold">
-                  <td className="px-4 py-3.5 border-r border-slate-150 text-center font-mono text-slate-800">III</td>
-                  <td className="px-6 py-3.5 border-r border-slate-150 uppercase text-slate-800 font-black">VỐN LỒNG GHÉP</td>
-
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.iii_plan}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('iii_plan', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg font-bold bg-white text-slate-805 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all ${cellFlashes[flashPrefix + 'iii_plan'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.iii_first}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('iii_first', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg font-bold bg-white text-slate-805 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all ${cellFlashes[flashPrefix + 'iii_first'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.iii_second}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('iii_second', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg font-bold bg-white text-slate-805 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all ${cellFlashes[flashPrefix + 'iii_second'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="text"
-                      disabled
-                      value={computedTable07.iii.total.toLocaleString('vi-VN')}
-                      className="w-full text-center py-2 border border-slate-100 rounded-lg font-extrabold bg-slate-50 text-slate-500 cursor-not-allowed"
-                    />
-                  </td>
-                  <td className="px-4 py-3.5 text-center text-blue-600 font-extrabold bg-blue-50/10">
-                    {computedTable07.iii.percent.toFixed(1)}%
-                  </td>
-                </tr>
-
-                {/* VỐN TÍN DỤNG CHÍNH SÁCH Level 1 */}
-                <tr className="bg-slate-50/15 border-slate-150 font-bold">
-                  <td className="px-4 py-3.5 border-r border-slate-150 text-center font-mono text-slate-800">IV</td>
-                  <td className="px-6 py-3.5 border-r border-slate-150 uppercase text-slate-800 font-black">VỐN TÍN DỤNG CHÍNH SÁCH</td>
-
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.iv_plan}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('iv_plan', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg font-bold bg-white text-slate-805 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all ${cellFlashes[flashPrefix + 'iv_plan'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.iv_first}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('iv_first', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg font-bold bg-white text-slate-805 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all ${cellFlashes[flashPrefix + 'iv_first'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.iv_second}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('iv_second', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg font-bold bg-white text-slate-805 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all ${cellFlashes[flashPrefix + 'iv_second'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="text"
-                      disabled
-                      value={computedTable07.iv.total.toLocaleString('vi-VN')}
-                      className="w-full text-center py-2 border border-slate-100 rounded-lg font-extrabold bg-slate-50 text-slate-500 cursor-not-allowed"
-                    />
-                  </td>
-                  <td className="px-4 py-3.5 text-center text-blue-600 font-extrabold bg-blue-50/10">
-                    {computedTable07.iv.percent.toFixed(1)}%
-                  </td>
-                </tr>
-
-                {/* VỐN DOANH NGHIỆP Level 1 */}
-                <tr className="bg-slate-50/15 border-slate-150 font-bold">
-                  <td className="px-4 py-3.5 border-r border-slate-150 text-center font-mono text-slate-800">V</td>
-                  <td className="px-6 py-3.5 border-r border-slate-150 uppercase text-slate-800 font-black">VỐN DOANH NGHIỆP</td>
-
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.v_plan}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('v_plan', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg font-bold bg-white text-slate-805 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all ${cellFlashes[flashPrefix + 'v_plan'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.v_first}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('v_first', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg font-bold bg-white text-slate-805 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all ${cellFlashes[flashPrefix + 'v_first'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.v_second}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('v_second', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg font-bold bg-white text-slate-805 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all ${cellFlashes[flashPrefix + 'v_second'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="text"
-                      disabled
-                      value={computedTable07.v.total.toLocaleString('vi-VN')}
-                      className="w-full text-center py-2 border border-slate-100 rounded-lg font-extrabold bg-slate-50 text-slate-500 cursor-not-allowed"
-                    />
-                  </td>
-                  <td className="px-4 py-3.5 text-center text-blue-600 font-extrabold bg-blue-50/10">
-                    {computedTable07.v.percent.toFixed(1)}%
-                  </td>
-                </tr>
-
-                {/* HUY ĐỘNG TỪ CỘNG ĐỒNG VÀ NGƯỜI DÂN Level 1 */}
-                <tr className="bg-slate-50/25 text-slate-805 font-bold">
-                  <td className="px-4 py-4 border-r border-slate-150 text-center font-mono text-slate-800">VI</td>
-                  <td className="px-6 py-4 border-r border-slate-150 uppercase text-slate-805 font-black tracking-wide">HUY ĐỘNG TỪ CỘNG ĐỒNG VÀ NGƯỜI DÂN</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center text-slate-800 font-bold">{computedTable07.vi.plan.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center text-slate-800 font-bold">{computedTable07.vi.first.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center text-slate-800 font-bold">{computedTable07.vi.second.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 border-r border-slate-150 text-center bg-slate-50/10 text-slate-800 font-bold">{computedTable07.vi.total.toLocaleString('vi-VN')}</td>
-                  <td className="px-4 py-4 text-center text-blue-600 font-bold bg-blue-50/10">
-                    {computedTable07.vi.percent.toFixed(1)}%
-                  </td>
-                </tr>
-
-                {/* Tiền mặt Level 2 */}
-                <tr className="hover:bg-slate-50/35 transition-colors">
-                  <td className="px-4 py-3 border-r border-slate-150 text-center font-mono text-slate-400">1</td>
-                  <td className="px-6 py-3 border-r border-slate-150 text-slate-700 pl-10 font-bold">Tiền mặt</td>
-
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.vi1_plan}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('vi1_plan', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'vi1_plan'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.vi1_first}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('vi1_first', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'vi1_first'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.vi1_second}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('vi1_second', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'vi1_second'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="text"
-                      disabled
-                      value={(resourceRows07.vi1_first + resourceRows07.vi1_second).toLocaleString('vi-VN')}
-                      placeholder="Tính tự động..."
-                      className="w-full text-center py-2 border border-slate-100 rounded-lg font-bold bg-slate-50 text-slate-550 cursor-not-allowed select-none"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-center text-slate-400 font-bold text-xs italic bg-blue-50/5">
-                    Tính tự động...
-                  </td>
-                </tr>
-
-                {/* Ngày công và hiện vật quy đổi Level 2 */}
-                <tr className="hover:bg-slate-50/35 transition-colors text-slate-705">
-                  <td className="px-4 py-3 border-r border-slate-150 text-center font-mono text-slate-400">2</td>
-                  <td className="px-6 py-3 border-r border-slate-150 text-slate-700 pl-10 font-bold">Ngày công và hiện vật quy đổi</td>
-
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.vi2_plan}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('vi2_plan', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-850 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'vi2_plan'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.vi2_first}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('vi2_first', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-850 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'vi2_first'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="number"
-                      value={resourceRows07.vi2_second}
-                      disabled={!isDr}
-                      onChange={(e) => handleResourceChange('vi2_second', e.target.value)}
-                      className={`w-full text-center py-2 border rounded-lg focus:border-blue-500 hover:border-slate-350 font-bold bg-white text-slate-850 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${cellFlashes[flashPrefix + 'vi2_second'] ? 'bg-amber-100' : 'border-slate-200'
-                        }`}
-                    />
-                  </td>
-                  <td className="p-1.5 border-r border-slate-150">
-                    <input
-                      type="text"
-                      disabled
-                      value={(resourceRows07.vi2_first + resourceRows07.vi2_second).toLocaleString('vi-VN')}
-                      placeholder="Tính tự động..."
-                      className="w-full text-center py-2 border border-slate-100 rounded-lg font-bold bg-slate-50 text-slate-550 cursor-not-allowed select-none"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-center text-slate-400 font-bold text-xs italic bg-blue-50/5">
-                    Tính tự động...
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
+        {/* APPRAISAL HISTORY INFO */}
+        {form.appraisal && (
+          <div className="bg-emerald-50/40 p-6 rounded-3xl border border-emerald-500/15 flex gap-4 items-start shadow-sm text-left">
+            <div className="p-2 bg-emerald-100 text-emerald-700 rounded-2xl border border-emerald-500/10">
+              <ShieldCheck className="w-6 h-6 shrink-0" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black text-emerald-950 uppercase tracking-widest">KẾT QUẢ THẨM ĐỊNH TỈNH:</span>
+                <span className="px-3 py-1 bg-emerald-500 text-white font-black rounded-lg text-xs uppercase tracking-wider shadow-sm">
+                  Chấp thuận đạt chuẩn
+                </span>
+              </div>
+              <p className="text-xs text-slate-700 font-bold italic mt-2.5">“{form.appraisal.comment}”</p>
+              <div className="text-xs text-slate-400 uppercase tracking-wider font-extrabold mt-3 border-t border-slate-100 pt-2.5 flex justify-between items-center">
+                <span>Đồng Thẩm định viên: <strong className="text-slate-650 font-black">{form.appraisal.appraiserName}</strong></span>
+                <span>Thời điểm kiểm soát: {new Date(form.appraisal.updatedAt).toLocaleString('vi-VN')}</span>
+              </div>
+            </div>
           </div>
+        )}
 
-          {/* Table Instructions line matching picture footer */}
-          <div className="bg-slate-50/75 p-5 border-t border-slate-150 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <span className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Info className="w-4.5 h-4.5 text-blue-500 shrink-0" />
-              <span>DỮ LIỆU ĐỒNG BỘ CHẶT CHẼ THEO GIAO GIAO CHỈ TIÊU & HOÀN THIỆN KPI</span>
-            </span>
+        {/* SUPERVISION LOG / PANEL */}
+        {form.status === 'APPROVED' && userSession.role === 'SUPERVISOR' && (
+          <div className="bg-gradient-to-br from-indigo-500/10 to-indigo-600/5 p-7 rounded-3xl border border-indigo-500/20 shadow-md space-y-5">
+            <div className="flex items-center gap-3 pb-3 border-b border-indigo-500/10">
+              <div className="p-2.5 bg-indigo-600 text-white rounded-2xl shadow-md">
+                <Activity className="w-6 h-6 shrink-0 animate-pulse" />
+              </div>
+              <div className="text-left">
+                <h4 className="text-sm font-black text-indigo-950 uppercase tracking-wider leading-none">VĂN PHÒNG GIÁM SÁT MẶT TRẬN TỔ QUỐC VIỆT NAM</h4>
+                <p className="text-xs text-indigo-650 mt-1.5 font-bold uppercase tracking-wider">Thẩm tra công tác minh bạch công khai, đo lường sự hài lòng của Nhân dân</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 text-left">
+                <label className="block text-xs font-black text-indigo-800 uppercase tracking-wider mb-1.5">Ghi nhận / Lập ý kiến giám sát chính thức</label>
+                <textarea
+                  value={supervisionComment}
+                  onChange={(e) => setSupervisionComment(e.target.value)}
+                  placeholder="Phân tích mức độ dân chủ cơ sở, phát hiện nhũng nhiễu lãng phí hoặc khiếu nại chưa xử lý của cử tri..."
+                  rows={3}
+                  className="w-full text-xs p-3.5 bg-white border border-indigo-205 focus:border-indigo-550 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 text-slate-800 font-bold placeholder:text-slate-400"
+                />
+              </div>
+
+              <div className="flex flex-col justify-between text-left">
+                <div>
+                  <label className="block text-xs font-black text-indigo-800 uppercase tracking-wider mb-1.5">Mức độ hoàn thành, tuân thủ</label>
+                  <select
+                    value={complianceLevel}
+                    onChange={(e) => setComplianceLevel(e.target.value)}
+                    className="w-full text-xs p-3.5 bg-white border border-indigo-200 focus:border-indigo-550 rounded-2xl outline-none font-bold text-indigo-900 shadow-sm"
+                  >
+                    <option value="Xuất sắc">Xuất sắc (Đúng tiến hạn, chính xác)</option>
+                    <option value="Đạt yêu cầu">Đạt yêu cầu (Không có khiếu tố)</option>
+                    <option value="Cần cải thiện">Cần phê bình cải thiện sâu sắc</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={handleSupervise}
+                  className="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-550 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/15 hover:shadow-[0_4px_15px_rgba(79,70,229,0.3)] transition-all cursor-pointer border-none"
+                >
+                  Ký đóng dấu Giám sát Quốc gia
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Dynamic Action Buttons bar exactly matching screen footer */}
-        {/* <div className="flex items-center justify-end gap-3 pt-1">
-          <button
-            onClick={() => {
-              setNotifyMessage(`Đã lưu tạm dữ liệu huy động nguồn lực ${form.code === 'Biểu 11' ? 'Mẫu 11' : 'Mẫu 07'} thành công!`);
-              setTimeout(() => setNotifyMessage(null), 3000);
-            }}
-            className="px-5 py-2.5 border border-[#10b981] hover:bg-emerald-50 text-[#10b981] font-black text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer bg-white"
-          >
-            <Save className="w-3.5 h-3.5 text-[#10b981]" />
-            <span>Lưu nháp</span>
-          </button>
-
-          <button
-            onClick={handleOpenSubmit}
-            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-md"
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span>
-              {['Biểu 04', 'Biểu 05', 'Biểu 06', 'Biểu 07', 'Biểu 08', 'Biểu 09'].includes(form.code) && userSession.role === 'APPRAISER'
-                ? 'Gửi Bộ tổng hợp'
-                : 'Xác nhận hoàn thành'}
-            </span>
-          </button>
-        </div> */}
+        {/* SUPERVISION HISTORY INFO */}
+        {form.supervision && (
+          <div className="bg-indigo-50/40 p-6 rounded-3xl border border-indigo-500/15 flex gap-4 items-start shadow-sm text-left">
+            <div className="p-2 bg-indigo-100 text-indigo-700 rounded-2xl border border-indigo-500/10">
+              <Award className="w-6 h-6 shrink-0" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black text-indigo-950 uppercase tracking-widest">KẾT LUẬN GIÁM SÁT VIÊN TW:</span>
+                <span className="px-3 py-1 bg-indigo-600 text-white font-black rounded-lg text-xs uppercase tracking-wider shadow-sm font-mono">
+                  TUÂN THỦ: {form.supervision.complianceLevel}
+                </span>
+              </div>
+              <p className="text-xs text-slate-700 font-bold italic mt-2.5">“{form.supervision.comment}”</p>
+              <div className="text-xs text-slate-400 uppercase tracking-wider font-extrabold mt-3 border-t border-slate-100 pt-2.5 flex justify-between items-center">
+                <span>Đại diện Ban Giám Sát Mặt Trận: <strong className="text-slate-600 font-black">{form.supervision.supervisorName}</strong></span>
+                <span>Thời điểm kiểm soát: {new Date(form.supervision.updatedAt).toLocaleString('vi-VN')}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Confirmation Signature Modal Overlay */}
         {showConfirmPopup && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 select-none animate-fade-in">
-            <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-150 animate-slide-up">
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6.5 shadow-2xl border border-slate-150/85 animate-slide-up text-left">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100">
-                    <ShieldCheck className="w-5.5 h-5.5" />
+                  <div className="p-2.5 bg-amber-500/10 text-amber-600 rounded-2xl border border-amber-500/10 animate-pulse">
+                    <ShieldCheck className="w-5.5 h-5.5 text-amber-650" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider leading-none">
-                      Xác thực chứng thư số CA
-                    </h4>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Ký trực tiếp lên Hệ thống thẩm định tỉnh
-                    </p>
+                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider leading-none">Xác thực chứng thư số CA</h4>
+                    <p className="text-xs text-slate-450 mt-1">Gửi trực tiếp lên Hệ thống thẩm định tỉnh</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowConfirmPopup(false)}
-                  className="text-slate-400 hover:text-slate-700 transition-colors p-1 border-none bg-transparent cursor-pointer"
-                >
+                <button onClick={() => setShowConfirmPopup(false)} className="text-slate-400 hover:text-slate-700 transition-colors border-none bg-transparent cursor-pointer">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  onUpdateForm({
-                    ...form,
-                    status: 'SUBMITTED',
-                    editor: digitalSignInput || userSession.fullName,
-                    updatedAt: new Date().toISOString(),
-                  });
-                  setShowConfirmPopup(false);
-                  setNotifyMessage(
-                    `Nộp báo cáo thành công! Mẫu ${form.code === 'Biểu 11' ? '11' : '07'} đã được Ký số bởi Chuyên viên ${digitalSignInput || userSession.fullName}.`
-                  );
-                  setTimeout(() => {
-                    setNotifyMessage(null);
-                    onBack();
-                  }, 2500);
-                }}
-                className="space-y-4 font-sans text-xs"
-              >
+              <form onSubmit={handleConfirmSubmit} className="space-y-4 font-sans text-xs">
                 <p className="text-slate-500 leading-relaxed font-bold">
                   Mọi hành động đẩy dữ liệu sang Thẩm duyệt đều yêu cầu mã khóa danh tính CA để làm căn cứ pháp lý xử lý liên ngành quốc gia. Vui lòng ghi rõ họ tên thụ lý.
                 </p>
@@ -4459,10 +1942,10 @@ export default function FormDetailView({
                   <input
                     type="text"
                     required
-                    placeholder="Ví dụ: Nguyễn Văn Hải..."
+                    placeholder="Ví dụ: Nguyễn Văn Hùng..."
                     value={digitalSignInput}
                     onChange={(e) => setDigitalSignInput(e.target.value)}
-                    className="w-full text-xs p-3 duration-250 border border-slate-350 rounded-2xl outline-none focus:ring-4 focus:ring-slate-100 font-bold text-slate-800 focus:border-slate-500 bg-slate-50/50 focus:bg-white transition-all"
+                    className="w-full text-xs p-3 duration-250 border border-slate-300 rounded-2xl outline-none focus:ring-4 focus:ring-slate-100 font-bold text-slate-800 focus:border-slate-500 bg-slate-50/50 focus:bg-white transition-all"
                   />
                 </div>
 
@@ -4470,27 +1953,25 @@ export default function FormDetailView({
                   <button
                     type="button"
                     onClick={() => setShowConfirmPopup(false)}
-                    className="flex-1 py-3 border border-slate-300 text-slate-600 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-50 cursor-pointer"
+                    className="flex-1 py-3 border border-slate-300 text-slate-600 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-50 cursor-pointer bg-white"
                   >
                     Hủy bỏ
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-[#014285] hover:bg-[#002a54] text-white text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer shadow-lg shadow-blue-950/15"
+                    className="flex-1 py-3 bg-slate-950 hover:bg-slate-900 text-white text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer shadow-lg shadow-slate-950/15 border-none"
                   >
-                    Ký chứng thư
+                    Ký chứng thư &amp; Giao nộp
                   </button>
                 </div>
               </form>
             </div>
           </div>
         )}
-        {renderSyncModal()}
       </div>
     );
   }
-
-  if (form.code === 'Biểu 10') {
+if (form.code === 'Biểu 10') {
     const activeGroup = activeCommune?.group || 'II';
     const resolvedTargetPercent =
       activeGroup === 'I' && activeCriteria.group1Threshold !== undefined ? activeCriteria.group1Threshold
@@ -4511,17 +1992,27 @@ export default function FormDetailView({
           </div>
         )}
 
-        {/* Breadcrumb pathing */}
-        <div className="text-xs text-slate-400 font-bold mb-1 flex items-center gap-1.5 flex-wrap uppercase tracking-wider">
-          <button onClick={onBackToPeriods || onBack} className="hover:text-amber-500 cursor-pointer transition-colors">
-            Đợt báo cáo
+                {/* Breadcrumb pathing */}
+        <div className="flex items-center gap-3 mb-3 text-left">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all cursor-pointer border border-slate-200/60 shadow-sm"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-500" />
+            <span>Quay lại</span>
           </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <button onClick={onBack} className="hover:text-amber-500 cursor-pointer transition-colors">
-            Chi tiết đợt báo cáo
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-          <span className="text-[#014285] font-black">Báo cáo Mẫu 10</span>
+          <div className="h-4 w-px bg-slate-200"></div>
+          <div className="text-xs text-slate-400 font-bold flex items-center gap-1.5 flex-wrap uppercase tracking-wider">
+            <button onClick={onBackToPeriods || onBack} className="hover:text-[#014285] hover:underline cursor-pointer transition-all border-none bg-transparent font-bold">
+              Đợt báo cáo
+            </button>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+            <button onClick={onBack} className="hover:text-[#014285] hover:underline cursor-pointer transition-all border-none bg-transparent font-bold">
+              Chi tiết đợt báo cáo
+            </button>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+            <span className="text-[#014285] font-black">Báo cáo Mẫu 10</span>
+          </div>
         </div>
 
         {/* Primary Screen Header */}
@@ -5168,6 +2659,7 @@ export default function FormDetailView({
                   {activeCriteria.guidelines}
                 </p>
                 <div className="pt-1 select-none">
+                  {activeCriteria.guideDoc ? (
                   <a
                     href="#docs"
                     onClick={(e) => {
@@ -5183,9 +2675,14 @@ export default function FormDetailView({
                     }}
                     className="text-xs font-black text-[#10b981] hover:underline flex items-center gap-1.5 cursor-pointer inline-flex"
                   >
-                    <span>Xem văn bản hướng dẫn {activeCriteria.guideDoc}</span>
+                    <span>Xem văn bản hướng dẫn ${activeCriteria.guideDoc}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
+                ) : (
+                  <p className="text-[10px] text-slate-455 font-bold italic text-left mt-1">
+                    Tiêu chí này chưa liên kết văn bản hướng dẫn
+                  </p>
+                )}
                 </div>
               </div>
             </div>

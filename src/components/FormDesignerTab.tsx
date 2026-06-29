@@ -14,42 +14,298 @@ export const INITIAL_FORM_TEMPLATES: FormTemplate[] = [
   {
     id: 'tmpl-b04',
     code: 'Biểu 04',
-    title: 'Cơ chế chính sách ban hành thực hiện chương trình giai đoạn 2026-2030',
-    description: 'Báo cáo cơ chế pháp lý, chính sách đầu tư hỗ trợ xây dựng NTM cấp địa phương',
+    title: 'Các cơ chế, chính sách do địa phương ban hành để thực hiện chương trình giai đoạn 2026-2030',
+    description: 'Báo cáo các văn bản quy phạm, hướng dẫn, chính sách đầu tư tại cấp Tỉnh (Kèm theo Mẫu số 03).',
     columns: [
       { id: 'tt', label: 'TT', type: 'text', width: 60 },
-      { id: 'category', label: 'Tên cơ chế, chính sách', type: 'text', width: 250 },
-      { id: 'unit', label: 'Đơn vị ban hành', type: 'text', width: 120 },
-      { id: 'quantity', label: 'Số hiệu văn bản', type: 'text', width: 120 },
-      { id: 'note', label: 'Ghi chú', type: 'text', width: 200 }
+      { id: 'type', label: 'Loại văn bản', type: 'text', width: 150 },
+      { id: 'codeAndDate', label: 'Số, ngày, tháng ban hành', type: 'text', width: 180 },
+      { id: 'summary', label: 'Trích yếu', type: 'text', width: 200 },
+      { id: 'mainGoal', label: 'Mục tiêu', type: 'text', width: 200 },
+      { id: 'mainContent', label: 'Nội dung chủ yếu của cơ chế chính sách', type: 'text', width: 280 },
+      { id: 'note', label: 'Ghi chú', type: 'text', width: 150 }
     ],
     rows: [
-      { id: 1, tt: '1', category: 'Chính sách hỗ trợ xi măng làm đường giao thông nông thôn', unit: 'HĐND Tỉnh' },
-      { id: 2, tt: '2', category: 'Nghị quyết ưu đãi thu hút doanh nghiệp đầu tư vào nông nghiệp', unit: 'HĐND Tỉnh' },
-      { id: 3, tt: '3', category: 'Quyết định hỗ trợ kinh phí phát triển sản phẩm OCOP', unit: 'UBND Tỉnh' }
+      { id: 1, tt: '1', category: 'Nghị quyết của HĐND' },
+      { id: 2, tt: '2', category: 'Quyết định của UBND' }
     ]
   },
   {
     id: 'tmpl-b05',
     code: 'Biểu 05',
-    title: 'Kết quả thực hiện bộ tiêu chí quốc gia về nông thôn mới (Tổng hợp)',
-    description: 'Biểu mẫu rà soát tiến triển đạt chuẩn 10 tiêu chí nông thôn mới',
+    title: 'Kết quả thực hiện bộ tiêu chí quốc gia về nông thôn mới 6 tháng..../năm...',
+    description: 'Dành cho cấp Tỉnh tổng hợp kết quả của các huyện/xã (Kèm theo Mẫu số 03).',
     columns: [
       { id: 'tt', label: 'TT', type: 'text', width: 60 },
-      { id: 'category', label: 'Nội dung tiêu chí', type: 'text', width: 250 },
-      { id: 'unit', label: 'Đơn vị tính', type: 'text', width: 100 },
-      { id: 'group1', label: 'Nhóm I (Đồng bằng)', type: 'number', width: 150 },
-      { id: 'group2', label: 'Nhóm II (Cận nghèo)', type: 'number', width: 150 },
-      { id: 'group3', label: 'Nhóm III (Hải đảo)', type: 'number', width: 150 },
-      { id: 'note', label: 'Ghi chú giải trình', type: 'text', width: 200 }
+      { id: 'category', label: 'Nội dung', type: 'text', width: 280 },
+      { id: 'unit', label: 'ĐVT (xã)', type: 'text', width: 80 },
+      { id: 'g1_prev', label: 'KQ 31/12 năm trước', type: 'number', group: 'Xã nhóm 1' },
+      { id: 'g1_curr', label: 'TH 6 tháng năm...', type: 'number', group: 'Xã nhóm 1' },
+      { id: 'g1_plan', label: 'KH 6T cuối năm...', type: 'number', group: 'Xã nhóm 1' },
+      { id: 'g2_prev', label: 'KQ 31/12 năm trước', type: 'number', group: 'Xã nhóm 2' },
+      { id: 'g2_curr', label: 'TH 6 tháng năm...', type: 'number', group: 'Xã nhóm 2' },
+      { id: 'g2_plan', label: 'KH 6T cuối năm...', type: 'number', group: 'Xã nhóm 2' },
+      { id: 'g3_prev', label: 'KQ 31/12 năm trước', type: 'number', group: 'Xã nhóm 3' },
+      { id: 'g3_curr', label: 'TH 6 tháng năm...', type: 'number', group: 'Xã nhóm 3' },
+      { id: 'g3_plan', label: 'KH 6T cuối năm...', type: 'number', group: 'Xã nhóm 3' },
+      { id: 'note', label: 'Ghi chú', type: 'text', width: 150 }
     ],
     rows: [
-      { id: 1, tt: '1', category: 'Quy hoạch xây dựng', unit: 'Xã' },
-      { id: 2, tt: '2', category: 'Hạ tầng giao thông đạt chuẩn', unit: 'Xã' },
-      { id: 3, tt: '3', category: 'Thủy lợi & Phòng chống thiên tai', unit: 'Xã' }
+      { id: 1, tt: '1', category: 'Quy hoạch', unit: 'Xã' },
+      { id: 2, tt: '2', category: 'Hạ tầng kinh tế - xã hội', unit: 'Xã' },
+      { id: 3, tt: '3', category: 'Phát triển kinh tế nông thôn', unit: 'Xã' },
+      { id: 4, tt: '4', category: 'Đào tạo nguồn nhân lực nông thôn', unit: 'Xã' },
+      { id: 5, tt: '5', category: 'Văn hóa, Giáo dục, Y tế', unit: 'Xã' },
+      { id: 6, tt: '6', category: 'Giảm nghèo và An sinh xã hội', unit: 'Xã' },
+      { id: 7, tt: '7', category: 'Khoa học công nghệ và Chuyển đổi số', unit: 'Xã' },
+      { id: 8, tt: '8', category: 'Môi trường và cảnh quan nông thôn', unit: 'Xã' },
+      { id: 9, tt: '9', category: 'Xây dựng hệ thống chính trị và Hành chính công', unit: 'Xã' },
+      { id: 10, tt: '10', category: 'Tiếp cận pháp luật và An ninh, Quốc phòng', unit: 'Xã' }
+    ]
+  },
+  {
+    id: 'tmpl-b06',
+    code: 'Biểu 06',
+    title: 'Kết quả thực hiện chương trình 6 tháng..../năm...',
+    description: 'Tỉnh báo cáo rà soát tiến triển đạt chuẩn của toàn bộ các tiêu chí vĩ mô (Kèm theo Mẫu số 03).',
+    columns: [
+      { id: 'tt', label: 'TT', type: 'text', width: 60 },
+      { id: 'category', label: 'Nội dung', type: 'text', width: 320 },
+      { id: 'prevYear', label: 'KQ đến 31/12 năm trước', type: 'number' },
+      { id: 'currentS1', label: 'TH 6 tháng năm...', type: 'number' },
+      { id: 'planS2', label: 'KH 6T cuối năm...', type: 'number' },
+      { id: 'note', label: 'Ghi chú', type: 'text', width: 150 }
+    ],
+    rows: [
+      { id: 1, tt: 'I', category: 'Kết quả thực hiện xây dựng NTM cấp xã', isHeader: true, sectionCode: 'I' },
+      { id: 2, tt: '1', category: 'Tổng số xã thực hiện XD NTM trên địa bàn' },
+      { id: 3, tt: '2', category: 'Số xã đạt 10 tiêu chí' },
+      { id: 4, tt: '3', category: 'Số xã đạt từ 5 - 9 tiêu chí' },
+      { id: 5, tt: '4', category: 'Số xã đạt dưới 5 tiêu chí' }
+    ]
+  },
+  {
+    id: 'tmpl-b07',
+    code: 'Biểu 07',
+    title: 'Tổng hợp kết quả huy động nguồn lực thực hiện chương trình 6 tháng..../năm...',
+    description: 'Tổng hợp kết quả huy động nguồn lực thực hiện chương trình (ĐVT: Triệu đồng, Kèm theo Mẫu số 03).',
+    columns: [
+      { id: 'tt', label: 'STT', type: 'text', width: 60 },
+      { id: 'category', label: 'Nội dung chỉ tiêu', type: 'text', width: 280 },
+      { id: 'plan', label: 'Kế hoạch năm...', type: 'number' },
+      { id: 'actual', label: 'KQ huy động 6T/năm...', type: 'number' },
+      { id: 'planS2', label: 'KH 6T cuối năm...', type: 'number' }
+    ],
+    rows: [
+      { id: 1, tt: '', category: 'TỔNG SỐ' },
+      { id: 2, tt: 'I', category: 'NGÂN SÁCH TRUNG ƯƠNG' },
+      { id: 3, tt: '1', category: 'Vốn đầu tư công' },
+      { id: 4, tt: '2', category: 'Kinh phí thường xuyên' },
+      { id: 5, tt: 'II', category: 'NGÂN SÁCH ĐỊA PHƯƠNG' },
+      { id: 6, tt: '1', category: 'Tỉnh' },
+      { id: 7, tt: '2', category: 'Xã' },
+      { id: 8, tt: 'III', category: 'VỐN LỒNG GHÉP' },
+      { id: 9, tt: 'IV', category: 'VỐN TÍN DỤNG CHÍNH SÁCH' },
+      { id: 10, tt: 'V', category: 'VỐN DOANH NGHIỆP' },
+      { id: 11, tt: 'VI', category: 'HUY ĐỘNG TỪ CỘNG ĐỒNG VÀ NGƯỜI DÂN' },
+      { id: 12, tt: '1', category: 'Tiền mặt' },
+      { id: 13, tt: '2', category: 'Ngày công và hiện vật quy đổi' }
+    ]
+  },
+  {
+    id: 'tmpl-b08',
+    code: 'Biểu 08',
+    title: 'Kết quả thực hiện vốn đầu tư công thực hiện chương trình từ nguồn NSTW 6 tháng.../năm...',
+    description: 'Kết quả thực hiện vốn đầu tư công từ nguồn ngân sách trung ương (Kèm theo Mẫu số 03).',
+    columns: [
+      { id: 'tt', label: 'TT', type: 'text', width: 60 },
+      { id: 'category', label: 'CÔNG TRÌNH', type: 'text', width: 300 },
+      { id: 'plan', label: 'Kế hoạch năm ...', type: 'number' },
+      { id: 'actual', label: 'KQ TH 6 tháng năm...', type: 'number' },
+      { id: 'actualPlan', label: 'KQ TH kế hoạch năm...', type: 'number' },
+      { id: 'note', label: 'Ghi chú', type: 'text', width: 150 }
+    ],
+    rows: [
+      { id: 1, tt: '', category: 'TỔNG CỘNG' },
+      { id: 2, tt: '1', category: 'Giao thông' },
+      { id: 3, tt: '2', category: 'Thủy lợi' },
+      { id: 4, tt: '3', category: 'Phòng chống, thiên tai' },
+      { id: 5, tt: '4', category: 'Điện' },
+      { id: 6, tt: '5', category: 'Cơ sở hạ tầng thương mại nông thôn' },
+      { id: 7, tt: '6', category: 'CSHT vùng nguyên liệu tập trung' },
+      { id: 8, tt: '7', category: 'Hạ tầng số, hạ tầng viễn thông' },
+      { id: 9, tt: '8', category: 'Hệ thống truyền thanh' },
+      { id: 10, tt: '9', category: 'Công trình cung cấp nước sạch tập trung' },
+      { id: 11, tt: '10', category: 'CSHT phục vụ bảo vệ môi trường nông thôn' },
+      { id: 12, tt: '11', category: 'CSHT bố trí, ổn định dân cư' },
+      { id: 13, tt: '12', category: 'Hạ tầng CSDL, thông tin phục vụ quản lý Chương trình' },
+      { id: 14, tt: '13', category: 'CSHT đặc thù vùng đồng bào DTTS và miền núi' }
+    ]
+  },
+  {
+    id: 'tmpl-b09',
+    code: 'Biểu 09',
+    title: 'Kết quả huy động và thực hiện nguồn lực đầu tư thực hiện chương trình 6 tháng..../năm...',
+    description: 'Kết quả huy động nguồn lực đầu tư thực hiện chương trình (Kèm theo Mẫu số 03).',
+    columns: [
+      { id: 'tt', label: 'TT', type: 'text', width: 60 },
+      { id: 'category', label: 'NỘI DUNG THỰC HIỆN', type: 'text', width: 300 },
+      // 6T - Kết quả huy động
+      { id: 'hd_total', label: 'Tổng số', type: 'number', group: '6T - Kết quả huy động' },
+      { id: 'hd_vdt_total', label: 'Tổng số', type: 'number', group: '6T - Kết quả huy động', subGroup: 'Vốn đầu tư trực tiếp' },
+      { id: 'hd_nstw_dtpt', label: 'ĐTPT', type: 'number', group: '6T - Kết quả huy động', subGroup: 'Vốn đầu tư trực tiếp', subSubGroup: 'NSTW' },
+      { id: 'hd_nstw_sn', label: 'SN', type: 'number', group: '6T - Kết quả huy động', subGroup: 'Vốn đầu tư trực tiếp', subSubGroup: 'NSTW' },
+      { id: 'hd_nsdp', label: 'NSĐP', type: 'number', group: '6T - Kết quả huy động', subGroup: 'Vốn đầu tư trực tiếp' },
+      { id: 'hd_longGhep', label: 'Vốn lồng ghép', type: 'number', group: '6T - Kết quả huy động' },
+      { id: 'hd_tinDung', label: 'Vốn tín dụng', type: 'number', group: '6T - Kết quả huy động' },
+      { id: 'hd_doanhNghiep', label: 'Vốn doanh nghiệp', type: 'number', group: '6T - Kết quả huy động' },
+      { id: 'hd_danGop', label: 'Dân đóng góp', type: 'number', group: '6T - Kết quả huy động' },
+      // KH cuối năm
+      { id: 'kh_total', label: 'Tổng số', type: 'number', group: 'KH cuối năm' },
+      { id: 'kh_vdt_total', label: 'Tổng số', type: 'number', group: 'KH cuối năm', subGroup: 'Vốn đầu tư trực tiếp' },
+      { id: 'kh_nstw_dtpt', label: 'ĐTPT', type: 'number', group: 'KH cuối năm', subGroup: 'Vốn đầu tư trực tiếp', subSubGroup: 'NSTW' },
+      { id: 'kh_nstw_sn', label: 'SN', type: 'number', group: 'KH cuối năm', subGroup: 'Vốn đầu tư trực tiếp', subSubGroup: 'NSTW' },
+      { id: 'kh_nsdp', label: 'NSĐP', type: 'number', group: 'KH cuối năm', subGroup: 'Vốn đầu tư trực tiếp' },
+      { id: 'kh_longGhep', label: 'Vốn lồng ghép', type: 'number', group: 'KH cuối năm' },
+      { id: 'kh_tinDung', label: 'Vốn tín dụng', type: 'number', group: 'KH cuối năm' },
+      { id: 'kh_doanhNghiep', label: 'Vốn doanh nghiệp', type: 'number', group: 'KH cuối năm' },
+      { id: 'kh_danGop', label: 'Dân đóng góp', type: 'number', group: 'KH cuối năm' },
+      { id: 'note', label: 'Ghi chú', type: 'text', width: 150 }
+    ],
+    rows: [
+      { id: 1, tt: 'I', category: 'Hợp phần thứ nhất', isHeader: true, sectionCode: 'I' },
+      { id: 2, tt: '1', category: 'Nội dung thành phần 01' },
+      { id: 3, tt: '2', category: 'Nội dung thành phần 02' },
+      { id: 4, tt: 'II', category: 'Hợp phần thứ hai', isHeader: true, sectionCode: 'II' },
+      { id: 5, tt: '1', category: 'Nội dung thành phần 01' },
+      { id: 6, tt: 'III', category: 'Nội dung khác (nếu có)', isHeader: true, sectionCode: 'III' }
+    ]
+  },
+  {
+    id: 'tmpl-b10',
+    code: 'Biểu 10',
+    title: 'Kết quả thực hiện bộ tiêu chí quốc gia về NTM 6 tháng..../năm... (Xã)',
+    description: 'Kết quả thực hiện bộ tiêu chí quốc gia về nông thôn mới cấp xã (Kèm theo Mẫu số 04).',
+    columns: [
+      { id: 'tt', label: 'TT', type: 'text', width: 60 },
+      { id: 'category', label: 'Nội dung', type: 'text', width: 320 },
+      { id: 'unit', label: 'ĐVT', type: 'text', width: 80 },
+      { id: 'prevResult', label: 'Kết quả', type: 'number', group: 'KQ đến 31/12 năm trước' },
+      { id: 'prevEval', label: 'Đánh giá', type: 'boolean', group: 'KQ đến 31/12 năm trước' },
+      { id: 'currResult', label: 'Kết quả', type: 'number', group: 'TH 6 tháng năm...' },
+      { id: 'currEval', label: 'Đánh giá', type: 'boolean', group: 'TH 6 tháng năm...' },
+      { id: 'planResult', label: 'Kết quả', type: 'number', group: 'KH 6T cuối năm...' },
+      { id: 'planEval', label: 'Đánh giá', type: 'boolean', group: 'KH 6T cuối năm...' },
+      { id: 'note', label: 'Ghi chú', type: 'text', width: 150 }
+    ],
+    rows: [
+      { id: 1, tt: '1', category: 'Quy hoạch', unit: '' },
+      { id: 2, tt: '1.1', category: 'Có quy hoạch chung xã được phê duyệt', unit: 'xã' },
+      { id: 3, tt: '2', category: 'Hạ tầng kinh tế - xã hội', unit: '' },
+      { id: 4, tt: '2.1', category: 'Hệ thống đường giao thông nông thôn', unit: 'km' },
+      { id: 5, tt: '3', category: 'Phát triển kinh tế nông thôn', unit: '' },
+      { id: 6, tt: '3.1', category: 'Tốc độ tăng thu nhập bình quân đầu người', unit: '%' }
+    ]
+  },
+  {
+    id: 'tmpl-b11',
+    code: 'Biểu 11',
+    title: 'Tổng hợp kết quả huy động nguồn lực thực hiện chương trình 6 tháng năm..../năm... (Xã)',
+    description: 'Tổng hợp kết quả huy động nguồn lực thực hiện chương trình (ĐVT: Triệu đồng, Kèm theo Mẫu số 04).',
+    columns: [
+      { id: 'tt', label: 'STT', type: 'text', width: 60 },
+      { id: 'category', label: 'Nội dung chỉ tiêu', type: 'text', width: 280 },
+      { id: 'plan', label: 'Kế hoạch năm...', type: 'number' },
+      { id: 'actual', label: 'KQ huy động 6T/năm...', type: 'number' },
+      { id: 'planS2', label: 'KH 6T cuối năm...', type: 'number' }
+    ],
+    rows: [
+      { id: 1, tt: '', category: 'TỔNG SỐ' },
+      { id: 2, tt: 'I', category: 'NGÂN SÁCH TRUNG ƯƠNG' },
+      { id: 3, tt: '1', category: 'Vốn đầu tư công' },
+      { id: 4, tt: '2', category: 'Kinh phí thường xuyên' },
+      { id: 5, tt: 'II', category: 'NGÂN SÁCH ĐỊA PHƯƠNG' },
+      { id: 6, tt: '1', category: 'Tỉnh' },
+      { id: 7, tt: '2', category: 'Xã' },
+      { id: 8, tt: 'III', category: 'VỐN LỒNG GHÉP' },
+      { id: 9, tt: 'IV', category: 'VỐN TÍN DỤNG CHÍNH SÁCH' },
+      { id: 10, tt: 'V', category: 'VỐN DOANH NGHIỆP' },
+      { id: 11, tt: 'VI', category: 'HUY ĐỘNG TỪ CỘNG ĐỒNG VÀ NGƯỜI DÂN' },
+      { id: 12, tt: '1', category: 'Tiền mặt' },
+      { id: 13, tt: '2', category: 'Ngày công và hiện vật quy đổi' }
+    ]
+  },
+  {
+    id: 'tmpl-b12',
+    code: 'Biểu 12',
+    title: 'Kết quả huy động và thực hiện nguồn lực đầu tư thực hiện chương trình 6 tháng..../năm... (Xã)',
+    description: 'Kết quả huy động nguồn lực đầu tư thực hiện chương trình (Kèm theo Mẫu số 04).',
+    columns: [
+      { id: 'tt', label: 'TT', type: 'text', width: 60 },
+      { id: 'category', label: 'NỘI DUNG THỰC HIỆN', type: 'text', width: 300 },
+      // 6T - Kết quả huy động
+      { id: 'hd_total', label: 'Tổng số', type: 'number', group: '6T - Kết quả huy động' },
+      { id: 'hd_vdt_total', label: 'Tổng số', type: 'number', group: '6T - Kết quả huy động', subGroup: 'Vốn đầu tư trực tiếp' },
+      { id: 'hd_nstw_dtpt', label: 'ĐTPT', type: 'number', group: '6T - Kết quả huy động', subGroup: 'Vốn đầu tư trực tiếp', subSubGroup: 'NSTW' },
+      { id: 'hd_nstw_sn', label: 'SN', type: 'number', group: '6T - Kết quả huy động', subGroup: 'Vốn đầu tư trực tiếp', subSubGroup: 'NSTW' },
+      { id: 'hd_nsdp', label: 'NSĐP', type: 'number', group: '6T - Kết quả huy động', subGroup: 'Vốn đầu tư trực tiếp' },
+      { id: 'hd_longGhep', label: 'Vốn lồng ghép', type: 'number', group: '6T - Kết quả huy động' },
+      { id: 'hd_tinDung', label: 'Vốn tín dụng', type: 'number', group: '6T - Kết quả huy động' },
+      { id: 'hd_doanhNghiep', label: 'Vốn doanh nghiệp', type: 'number', group: '6T - Kết quả huy động' },
+      { id: 'hd_danGop', label: 'Dân đóng góp', type: 'number', group: '6T - Kết quả huy động' },
+      // KH cuối năm
+      { id: 'kh_total', label: 'Tổng số', type: 'number', group: 'KH cuối năm' },
+      { id: 'kh_vdt_total', label: 'Tổng số', type: 'number', group: 'KH cuối năm', subGroup: 'Vốn đầu tư trực tiếp' },
+      { id: 'kh_nstw_dtpt', label: 'ĐTPT', type: 'number', group: 'KH cuối năm', subGroup: 'Vốn đầu tư trực tiếp', subSubGroup: 'NSTW' },
+      { id: 'kh_nstw_sn', label: 'SN', type: 'number', group: 'KH cuối năm', subGroup: 'Vốn đầu tư trực tiếp', subSubGroup: 'NSTW' },
+      { id: 'kh_nsdp', label: 'NSĐP', type: 'number', group: 'KH cuối năm', subGroup: 'Vốn đầu tư trực tiếp' },
+      { id: 'kh_longGhep', label: 'Vốn lồng ghép', type: 'number', group: 'KH cuối năm' },
+      { id: 'kh_tinDung', label: 'Vốn tín dụng', type: 'number', group: 'KH cuối năm' },
+      { id: 'kh_doanhNghiep', label: 'Vốn doanh nghiệp', type: 'number', group: 'KH cuối năm' },
+      { id: 'kh_danGop', label: 'Dân đóng góp', type: 'number', group: 'KH cuối năm' },
+      { id: 'note', label: 'Ghi chú', type: 'text', width: 150 }
+    ],
+    rows: [
+      { id: 1, tt: 'I', category: 'Hợp phần thứ nhất', isHeader: true, sectionCode: 'I' },
+      { id: 2, tt: '1', category: 'Nội dung thành phần 01' },
+      { id: 3, tt: '2', category: 'Nội dung thành phần 02' },
+      { id: 4, tt: 'II', category: 'Hợp phần thứ hai', isHeader: true, sectionCode: 'II' },
+      { id: 5, tt: '1', category: 'Nội dung thành phần 01' },
+      { id: 6, tt: 'III', category: 'Nội dung khác (nếu có)', isHeader: true, sectionCode: 'III' }
+    ]
+  },
+  {
+    id: 'tmpl-b13',
+    code: 'Biểu 13',
+    title: 'Kết quả thực hiện vốn đầu tư phát triển từ nguồn NSTW 6 tháng.../năm...',
+    description: 'Kết quả thực hiện vốn đầu tư phát triển từ nguồn ngân sách trung ương (Kèm theo Mẫu số 04).',
+    columns: [
+      { id: 'tt', label: 'TT', type: 'text', width: 60 },
+      { id: 'category', label: 'CÔNG TRÌNH', type: 'text', width: 300 },
+      { id: 'plan', label: 'Kế hoạch năm ...', type: 'number' },
+      { id: 'actual', label: 'KQ TH 6 tháng năm...', type: 'number' },
+      { id: 'actualPlan', label: 'KQ TH kế hoạch năm...', type: 'number' },
+      { id: 'note', label: 'Ghi chú', type: 'text', width: 150 }
+    ],
+    rows: [
+      { id: 1, tt: '', category: 'TỔNG CỘNG' },
+      { id: 2, tt: '1', category: 'Giao thông' },
+      { id: 3, tt: '2', category: 'Thủy lợi' },
+      { id: 4, tt: '3', category: 'Phòng chống, thiên tai' },
+      { id: 5, tt: '4', category: 'Điện' },
+      { id: 6, tt: '5', category: 'Cơ sở hạ tầng thương mại nông thôn' },
+      { id: 7, tt: '6', category: 'CSHT vùng nguyên liệu tập trung' },
+      { id: 8, tt: '7', category: 'Hạ tầng số, hạ tầng viễn thông' },
+      { id: 9, tt: '8', category: 'Hệ thống truyền thanh' },
+      { id: 10, tt: '9', category: 'Công trình cung cấp nước sạch tập trung' },
+      { id: 11, tt: '10', category: 'CSHT phục vụ bảo vệ môi trường nông thôn' },
+      { id: 12, tt: '11', category: 'CSHT bố trí, ổn định dân cư' },
+      { id: 13, tt: '12', category: 'Hạ tầng CSDL, thông tin phục vụ quản lý Chương trình' },
+      { id: 14, tt: '13', category: 'CSHT đặc thù vùng đồng bào DTTS và miền núi' }
     ]
   }
 ];
+
 
 export default function FormDesignerTab({
   userSession
@@ -59,7 +315,7 @@ export default function FormDesignerTab({
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 4) return parsed;
       } catch (e) {}
     }
     return INITIAL_FORM_TEMPLATES;
@@ -92,6 +348,8 @@ export default function FormDesignerTab({
   // Temp item builders for modals
   const [newColLabel, setNewColLabel] = useState('');
   const [newColType, setNewColType] = useState<'text' | 'number' | 'boolean'>('text');
+  const [newColGroup, setNewColGroup] = useState('');
+  const [newColSubGroup, setNewColSubGroup] = useState('');
   
   const [newRowTT, setNewRowTT] = useState('');
   const [newRowCategory, setNewRowCategory] = useState('');
@@ -149,11 +407,15 @@ export default function FormDesignerTab({
       id: colId,
       label: newColLabel.trim(),
       type: newColType,
-      width: 150
+      width: 150,
+      ...(newColGroup.trim() ? { group: newColGroup.trim() } : {}),
+      ...(newColSubGroup.trim() ? { subGroup: newColSubGroup.trim() } : {})
     };
     setColumnsList([...columnsList, newCol]);
     setNewColLabel('');
     setNewColType('text');
+    setNewColGroup('');
+    setNewColSubGroup('');
   };
 
   const handleDeleteColumn = (id: string) => {
@@ -253,6 +515,19 @@ export default function FormDesignerTab({
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (window.confirm("Bạn có chắc chắn muốn khôi phục lại toàn bộ mẫu thiết kế hệ thống mặc định (Biểu 01 - Biểu 14)? Điều này sẽ ghi đè lên các thay đổi hiện tại.")) {
+                      setTemplates(INITIAL_FORM_TEMPLATES);
+                      triggerToast("Đã khôi phục toàn bộ mẫu hệ thống mặc định!");
+                    }
+                  }}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer border border-slate-200"
+                >
+                  <Settings className="w-4 h-4 text-slate-500" />
+                  <span>Khôi phục mẫu mặc định</span>
+                </button>
+
                 <button
                   onClick={handleCreateNew}
                   className="px-4 py-2.5 bg-[#014285] hover:bg-[#002d5c] text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
@@ -397,6 +672,12 @@ export default function FormDesignerTab({
                       <Columns className="w-3.5 h-3.5 text-[#014285]" />
                       <span>{c.label}</span>
                       <span className="text-[9px] text-slate-400 bg-slate-100 px-1 rounded uppercase">{c.type}</span>
+                      {c.group && (
+                        <span className="text-[9px] text-blue-600 bg-blue-50 border border-blue-200 px-1 rounded">{c.group}</span>
+                      )}
+                      {c.subGroup && (
+                        <span className="text-[9px] text-indigo-600 bg-indigo-50 border border-indigo-200 px-1 rounded">{c.subGroup}</span>
+                      )}
                       {c.id !== 'tt' && c.id !== 'category' && (
                         <button 
                           onClick={() => handleDeleteColumn(c.id)}
@@ -410,34 +691,56 @@ export default function FormDesignerTab({
                 </div>
 
                 {/* Add column tool */}
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center gap-3 text-xs">
-                  <div className="flex-1 w-full">
-                    <input 
-                      type="text" 
-                      placeholder="Tên cột mới (Ví dụ: Số liệu 6 tháng...)"
-                      value={newColLabel}
-                      onChange={(e) => setNewColLabel(e.target.value)}
-                      className="w-full text-xs p-2 border border-slate-300 bg-white rounded-lg outline-none font-bold"
-                    />
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-3 text-xs">
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <div className="flex-1 w-full">
+                      <input 
+                        type="text" 
+                        placeholder="Tên cột mới (Ví dụ: Số liệu 6 tháng...)"
+                        value={newColLabel}
+                        onChange={(e) => setNewColLabel(e.target.value)}
+                        className="w-full text-xs p-2 border border-slate-300 bg-white rounded-lg outline-none font-bold"
+                      />
+                    </div>
+                    <div className="w-full sm:w-48">
+                      <select
+                        value={newColType}
+                        onChange={(e) => setNewColType(e.target.value as any)}
+                        className="w-full text-xs p-2 border border-slate-300 bg-white rounded-lg outline-none font-bold text-slate-700"
+                      >
+                        <option value="text">Chữ (Text)</option>
+                        <option value="number">Số lượng (Number)</option>
+                        <option value="boolean">Đúng/Sai (Boolean)</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="w-full sm:w-48">
-                    <select
-                      value={newColType}
-                      onChange={(e) => setNewColType(e.target.value as any)}
-                      className="w-full text-xs p-2 border border-slate-300 bg-white rounded-lg outline-none font-bold text-slate-700"
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <div className="flex-1 w-full">
+                      <input 
+                        type="text" 
+                        placeholder="Nhóm cột (Group) - VD: Xã nhóm 1, NSTW..."
+                        value={newColGroup}
+                        onChange={(e) => setNewColGroup(e.target.value)}
+                        className="w-full text-xs p-2 border border-slate-300 bg-white rounded-lg outline-none font-bold"
+                      />
+                    </div>
+                    <div className="flex-1 w-full">
+                      <input 
+                        type="text" 
+                        placeholder="Nhóm phụ (Sub-group) - VD: ĐTPT, SN..."
+                        value={newColSubGroup}
+                        onChange={(e) => setNewColSubGroup(e.target.value)}
+                        className="w-full text-xs p-2 border border-slate-300 bg-white rounded-lg outline-none font-bold"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddColumn}
+                      className="w-full sm:w-auto px-4 py-2 bg-[#014285] hover:bg-[#002d5c] text-white rounded-lg font-bold shrink-0 cursor-pointer"
                     >
-                      <option value="text">Chữ (Text)</option>
-                      <option value="number">Số lượng (Number)</option>
-                      <option value="boolean">Đúng/Sai (Boolean)</option>
-                    </select>
+                      Thêm Cột
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAddColumn}
-                    className="w-full sm:w-auto px-4 py-2 bg-[#014285] hover:bg-[#002d5c] text-white rounded-lg font-bold shrink-0 cursor-pointer"
-                  >
-                    Thêm Cột
-                  </button>
                 </div>
               </div>
             </div>

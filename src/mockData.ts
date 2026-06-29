@@ -541,8 +541,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "I",
     category: "Hợp phần thứ nhất",
     quantity: 0,
-    hd_nstw_dtpt: 0, hd_nstw_sn: 0, hd_nsdp: 0, hd_longGhep: 0, hd_tinDung: 0, hd_doanhNghiep: 0, hd_danGop: 0,
-    kh_nstw_dtpt: 0, kh_nstw_sn: 0, kh_nsdp: 0, kh_longGhep: 0, kh_tinDung: 0, kh_doanhNghiep: 0, kh_danGop: 0,
+    hd_total: 0, hd_vdt_total: 0, hd_nstw_dtpt: 0, hd_nstw_sn: 0, hd_nsdp: 0, hd_longGhep: 0, hd_tinDung: 0, hd_doanhNghiep: 0, hd_danGop: 0,
+    kh_total: 0, kh_vdt_total: 0, kh_nstw_dtpt: 0, kh_nstw_sn: 0, kh_nsdp: 0, kh_longGhep: 0, kh_tinDung: 0, kh_doanhNghiep: 0, kh_danGop: 0,
     note: ""
   },
   {
@@ -551,8 +551,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "I",
     category: "Nội dung thành phần 01",
     quantity: 120,
-    hd_nstw_dtpt: 1500, hd_nstw_sn: 500, hd_nsdp: 800, hd_longGhep: 300, hd_tinDung: 1000, hd_doanhNghiep: 400, hd_danGop: 200,
-    kh_nstw_dtpt: 1200, kh_nstw_sn: 400, kh_nsdp: 600, kh_longGhep: 200, kh_tinDung: 800, kh_doanhNghiep: 300, kh_danGop: 150,
+    hd_total: 4700, hd_vdt_total: 2800, hd_nstw_dtpt: 1500, hd_nstw_sn: 500, hd_nsdp: 800, hd_longGhep: 300, hd_tinDung: 1000, hd_doanhNghiep: 400, hd_danGop: 200,
+    kh_total: 3650, kh_vdt_total: 2200, kh_nstw_dtpt: 1200, kh_nstw_sn: 400, kh_nsdp: 600, kh_longGhep: 200, kh_tinDung: 800, kh_doanhNghiep: 300, kh_danGop: 150,
     note: "Đầu tư xây dựng hạ tầng cơ sở và quy hoạch"
   },
   {
@@ -561,8 +561,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "I",
     category: "Nội dung thành phần 02",
     quantity: 85,
-    hd_nstw_dtpt: 820, hd_nstw_sn: 310, hd_nsdp: 510, hd_longGhep: 210, hd_tinDung: 510, hd_doanhNghiep: 210, hd_danGop: 110,
-    kh_nstw_dtpt: 910, kh_nstw_sn: 210, kh_nsdp: 460, kh_longGhep: 160, kh_tinDung: 610, kh_doanhNghiep: 260, kh_danGop: 90,
+    hd_total: 2680, hd_vdt_total: 1640, hd_nstw_dtpt: 820, hd_nstw_sn: 310, hd_nsdp: 510, hd_longGhep: 210, hd_tinDung: 510, hd_doanhNghiep: 210, hd_danGop: 110,
+    kh_total: 2700, kh_vdt_total: 1580, kh_nstw_dtpt: 910, kh_nstw_sn: 210, kh_nsdp: 460, kh_longGhep: 160, kh_tinDung: 610, kh_doanhNghiep: 260, kh_danGop: 90,
     note: "Hạ tầng kỹ thuật giao thông & thuỷ lợi liên xã"
   },
   {
@@ -571,8 +571,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "I",
     category: "Nội dung thành phần 03",
     quantity: 45,
-    hd_nstw_dtpt: 450, hd_nstw_sn: 150, hd_nsdp: 300, hd_longGhep: 100, hd_tinDung: 200, hd_doanhNghiep: 100, hd_danGop: 50,
-    kh_nstw_dtpt: 500, kh_nstw_sn: 100, kh_nsdp: 250, kh_longGhep: 50, kh_tinDung: 300, kh_doanhNghiep: 150, kh_danGop: 50,
+    hd_total: 1350, hd_vdt_total: 900, hd_nstw_dtpt: 450, hd_nstw_sn: 150, hd_nsdp: 300, hd_longGhep: 100, hd_tinDung: 200, hd_doanhNghiep: 100, hd_danGop: 50,
+    kh_total: 1400, kh_vdt_total: 850, kh_nstw_dtpt: 500, kh_nstw_sn: 100, kh_nsdp: 250, kh_longGhep: 50, kh_tinDung: 300, kh_doanhNghiep: 150, kh_danGop: 50,
     note: "Phát triển sản xuất nông nghiệp hàng hóa, liên kết chuỗi"
   },
   {
@@ -581,8 +581,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "I",
     category: "Nội dung thành phần 04",
     quantity: 30,
-    hd_nstw_dtpt: 300, hd_nstw_sn: 100, hd_nsdp: 200, hd_longGhep: 50, hd_tinDung: 150, hd_doanhNghiep: 50, hd_danGop: 30,
-    kh_nstw_dtpt: 350, kh_nstw_sn: 50, kh_nsdp: 150, kh_longGhep: 50, kh_tinDung: 200, kh_doanhNghiep: 50, kh_danGop: 20,
+    hd_total: 880, hd_vdt_total: 600, hd_nstw_dtpt: 300, hd_nstw_sn: 100, hd_nsdp: 200, hd_longGhep: 50, hd_tinDung: 150, hd_doanhNghiep: 50, hd_danGop: 30,
+    kh_total: 870, kh_vdt_total: 550, kh_nstw_dtpt: 350, kh_nstw_sn: 50, kh_nsdp: 150, kh_longGhep: 50, kh_tinDung: 200, kh_doanhNghiep: 50, kh_danGop: 20,
     note: "Giảm nghèo đa chiều vùng đặc biệt khó khăn"
   },
   {
@@ -591,8 +591,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "I",
     category: "Nội dung thành phần 05",
     quantity: 65,
-    hd_nstw_dtpt: 600, hd_nstw_sn: 200, hd_nsdp: 400, hd_longGhep: 150, hd_tinDung: 400, hd_doanhNghiep: 150, hd_danGop: 80,
-    kh_nstw_dtpt: 650, kh_nstw_sn: 150, kh_nsdp: 350, kh_longGhep: 100, kh_tinDung: 500, kh_doanhNghiep: 100, kh_danGop: 60,
+    hd_total: 1980, hd_vdt_total: 1200, hd_nstw_dtpt: 600, hd_nstw_sn: 200, hd_nsdp: 400, hd_longGhep: 150, hd_tinDung: 400, hd_doanhNghiep: 150, hd_danGop: 80,
+    kh_total: 1910, kh_vdt_total: 1150, kh_nstw_dtpt: 650, kh_nstw_sn: 150, kh_nsdp: 350, kh_longGhep: 100, kh_tinDung: 500, kh_doanhNghiep: 100, kh_danGop: 60,
     note: "Nâng cao chất lượng giáo dục vùng nông thôn"
   },
   {
@@ -601,8 +601,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "I",
     category: "Nội dung thành phần 06",
     quantity: 40,
-    hd_nstw_dtpt: 400, hd_nstw_sn: 120, hd_nsdp: 250, hd_longGhep: 80, hd_tinDung: 300, hd_doanhNghiep: 80, hd_danGop: 40,
-    kh_nstw_dtpt: 450, kh_nstw_sn: 100, kh_nsdp: 200, kh_longGhep: 60, kh_tinDung: 250, kh_doanhNghiep: 70, kh_danGop: 30,
+    hd_total: 1270, hd_vdt_total: 770, hd_nstw_dtpt: 400, hd_nstw_sn: 120, hd_nsdp: 250, hd_longGhep: 80, hd_tinDung: 300, hd_doanhNghiep: 80, hd_danGop: 40,
+    kh_total: 1160, kh_vdt_total: 750, kh_nstw_dtpt: 450, kh_nstw_sn: 100, kh_nsdp: 200, kh_longGhep: 60, kh_tinDung: 250, kh_doanhNghiep: 70, kh_danGop: 30,
     note: "Nâng cấp hạ tầng y tế cơ sở và y tế dự phòng"
   },
   {
@@ -611,8 +611,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "I",
     category: "Nội dung thành phần 07",
     quantity: 50,
-    hd_nstw_dtpt: 480, hd_nstw_sn: 160, hd_nsdp: 320, hd_longGhep: 110, hd_tinDung: 250, hd_doanhNghiep: 120, hd_danGop: 70,
-    kh_nstw_dtpt: 520, kh_nstw_sn: 140, kh_nsdp: 280, kh_longGhep: 90, kh_tinDung: 300, kh_doanhNghiep: 100, kh_danGop: 50,
+    hd_total: 1510, hd_vdt_total: 960, hd_nstw_dtpt: 480, hd_nstw_sn: 160, hd_nsdp: 320, hd_longGhep: 110, hd_tinDung: 250, hd_doanhNghiep: 120, hd_danGop: 70,
+    kh_total: 1480, kh_vdt_total: 940, kh_nstw_dtpt: 520, kh_nstw_sn: 140, kh_nsdp: 280, kh_longGhep: 90, kh_tinDung: 300, kh_doanhNghiep: 100, kh_danGop: 50,
     note: "Bảo tồn phát triển thiết chế văn hoá Cơ sở nông thôn"
   },
   {
@@ -621,8 +621,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "I",
     category: "Nội dung thành phần 08",
     quantity: 75,
-    hd_nstw_dtpt: 710, hd_nstw_sn: 230, hd_nsdp: 450, hd_longGhep: 140, hd_tinDung: 380, hd_doanhNghiep: 160, hd_danGop: 90,
-    kh_nstw_dtpt: 730, kh_nstw_sn: 190, kh_nsdp: 410, kh_longGhep: 120, kh_tinDung: 400, kh_doanhNghiep: 130, kh_danGop: 80,
+    hd_total: 2160, hd_vdt_total: 1390, hd_nstw_dtpt: 710, hd_nstw_sn: 230, hd_nsdp: 450, hd_longGhep: 140, hd_tinDung: 380, hd_doanhNghiep: 160, hd_danGop: 90,
+    kh_total: 2060, kh_vdt_total: 1330, kh_nstw_dtpt: 730, kh_nstw_sn: 190, kh_nsdp: 410, kh_longGhep: 120, kh_tinDung: 400, kh_doanhNghiep: 130, kh_danGop: 80,
     note: "Môi trường và nước sạch vệ sinh nông thôn"
   },
   {
@@ -631,8 +631,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "I",
     category: "Nội dung thành phần 09",
     quantity: 28,
-    hd_nstw_dtpt: 260, hd_nstw_sn: 90, hd_nsdp: 180, hd_longGhep: 60, hd_tinDung: 120, hd_doanhNghiep: 60, hd_danGop: 30,
-    kh_nstw_dtpt: 290, kh_nstw_sn: 70, kh_nsdp: 160, kh_longGhep: 40, kh_tinDung: 150, kh_doanhNghiep: 50, kh_danGop: 20,
+    hd_total: 800, hd_vdt_total: 530, hd_nstw_dtpt: 260, hd_nstw_sn: 90, hd_nsdp: 180, hd_longGhep: 60, hd_tinDung: 120, hd_doanhNghiep: 60, hd_danGop: 30,
+    kh_total: 780, kh_vdt_total: 520, kh_nstw_dtpt: 290, kh_nstw_sn: 70, kh_nsdp: 160, kh_longGhep: 40, kh_tinDung: 150, kh_doanhNghiep: 50, kh_danGop: 20,
     note: "Tăng cường năng lực hệ thống chính trị vững mạnh"
   },
   {
@@ -641,8 +641,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "I",
     category: "Nội dung thành phần 10",
     quantity: 35,
-    hd_nstw_dtpt: 330, hd_nstw_sn: 110, hd_nsdp: 210, hd_longGhep: 70, hd_tinDung: 160, hd_doanhNghiep: 75, hd_danGop: 45,
-    kh_nstw_dtpt: 360, kh_nstw_sn: 90, kh_nsdp: 190, kh_longGhep: 55, kh_tinDung: 180, kh_doanhNghiep: 60, kh_danGop: 30,
+    hd_total: 1000, hd_vdt_total: 650, hd_nstw_dtpt: 330, hd_nstw_sn: 110, hd_nsdp: 210, hd_longGhep: 70, hd_tinDung: 160, hd_doanhNghiep: 75, hd_danGop: 45,
+    kh_total: 965, kh_vdt_total: 640, kh_nstw_dtpt: 360, kh_nstw_sn: 90, kh_nsdp: 190, kh_longGhep: 55, kh_tinDung: 180, kh_doanhNghiep: 60, kh_danGop: 30,
     note: "Đảm bảo quốc phòng và an ninh nông thôn"
   },
   {
@@ -651,8 +651,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "II",
     category: "Hợp phần thứ hai",
     quantity: 0,
-    hd_nstw_dtpt: 0, hd_nstw_sn: 0, hd_nsdp: 0, hd_longGhep: 0, hd_tinDung: 0, hd_doanhNghiep: 0, hd_danGop: 0,
-    kh_nstw_dtpt: 0, kh_nstw_sn: 0, kh_nsdp: 0, kh_longGhep: 0, kh_tinDung: 0, kh_doanhNghiep: 0, kh_danGop: 0,
+    hd_total: 0, hd_vdt_total: 0, hd_nstw_dtpt: 0, hd_nstw_sn: 0, hd_nsdp: 0, hd_longGhep: 0, hd_tinDung: 0, hd_doanhNghiep: 0, hd_danGop: 0,
+    kh_total: 0, kh_vdt_total: 0, kh_nstw_dtpt: 0, kh_nstw_sn: 0, kh_nsdp: 0, kh_longGhep: 0, kh_tinDung: 0, kh_doanhNghiep: 0, kh_danGop: 0,
     note: ""
   },
   {
@@ -661,8 +661,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "II",
     category: "Nội dung thành phần 01",
     quantity: 90,
-    hd_nstw_dtpt: 1000, hd_nstw_sn: 400, hd_nsdp: 700, hd_longGhep: 200, hd_tinDung: 800, hd_doanhNghiep: 300, hd_danGop: 150,
-    kh_nstw_dtpt: 1100, kh_nstw_sn: 300, kh_nsdp: 600, kh_longGhep: 150, kh_tinDung: 700, kh_doanhNghiep: 250, kh_danGop: 100,
+    hd_total: 3550, hd_vdt_total: 2100, hd_nstw_dtpt: 1000, hd_nstw_sn: 400, hd_nsdp: 700, hd_longGhep: 200, hd_tinDung: 800, hd_doanhNghiep: 300, hd_danGop: 150,
+    kh_total: 3200, kh_vdt_total: 2000, kh_nstw_dtpt: 1100, kh_nstw_sn: 300, kh_nsdp: 600, kh_longGhep: 150, kh_tinDung: 700, kh_doanhNghiep: 250, kh_danGop: 100,
     note: "Dự án liên vùng phát triển hạ tầng chuỗi"
   },
   {
@@ -671,8 +671,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "II",
     category: "Nội dung thành phần 02",
     quantity: 55,
-    hd_nstw_dtpt: 550, hd_nstw_sn: 200, hd_nsdp: 350, hd_longGhep: 100, hd_tinDung: 300, hd_doanhNghiep: 100, hd_danGop: 50,
-    kh_nstw_dtpt: 600, kh_nstw_sn: 150, kh_nsdp: 300, kh_longGhep: 100, kh_tinDung: 400, kh_doanhNghiep: 150, kh_danGop: 50,
+    hd_total: 1650, hd_vdt_total: 1100, hd_nstw_dtpt: 550, hd_nstw_sn: 200, hd_nsdp: 350, hd_longGhep: 100, hd_tinDung: 300, hd_doanhNghiep: 100, hd_danGop: 50,
+    kh_total: 1750, kh_vdt_total: 1050, kh_nstw_dtpt: 600, kh_nstw_sn: 150, kh_nsdp: 300, kh_longGhep: 100, kh_tinDung: 400, kh_doanhNghiep: 150, kh_danGop: 50,
     note: "Chuyển giao và đào tạo khoa học kỹ thuật thông minh"
   },
   {
@@ -681,8 +681,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "II",
     category: "Nội dung thành phần 03",
     quantity: 42,
-    hd_nstw_dtpt: 410, hd_nstw_sn: 140, hd_nsdp: 260, hd_longGhep: 90, hd_tinDung: 220, hd_doanhNghiep: 90, hd_danGop: 40,
-    kh_nstw_dtpt: 430, kh_nstw_sn: 110, kh_nsdp: 220, kh_longGhep: 70, kh_tinDung: 250, kh_doanhNghiep: 80, kh_danGop: 30,
+    hd_total: 1250, hd_vdt_total: 810, hd_nstw_dtpt: 410, hd_nstw_sn: 140, hd_nsdp: 260, hd_longGhep: 90, hd_tinDung: 220, hd_doanhNghiep: 90, hd_danGop: 40,
+    kh_total: 1190, kh_vdt_total: 760, kh_nstw_dtpt: 430, kh_nstw_sn: 110, kh_nsdp: 220, kh_longGhep: 70, kh_tinDung: 250, kh_doanhNghiep: 80, kh_danGop: 30,
     note: "Nâng cao năng lực truyền thông số và hội nhập"
   },
   {
@@ -691,8 +691,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "II",
     category: "Nội dung thành phần 04",
     quantity: 38,
-    hd_nstw_dtpt: 360, hd_nstw_sn: 130, hd_nsdp: 240, hd_longGhep: 80, hd_tinDung: 190, hd_doanhNghiep: 80, hd_danGop: 35,
-    kh_nstw_dtpt: 390, kh_nstw_sn: 100, kh_nsdp: 200, kh_longGhep: 60, kh_tinDung: 210, kh_doanhNghiep: 70, kh_danGop: 25,
+    hd_total: 1115, hd_vdt_total: 730, hd_nstw_dtpt: 360, hd_nstw_sn: 130, hd_nsdp: 240, hd_longGhep: 80, hd_tinDung: 190, hd_doanhNghiep: 80, hd_danGop: 35,
+    kh_total: 1055, kh_vdt_total: 690, kh_nstw_dtpt: 390, kh_nstw_sn: 100, kh_nsdp: 200, kh_longGhep: 60, kh_tinDung: 210, kh_doanhNghiep: 70, kh_danGop: 25,
     note: "Kiểm tra, đánh giá chất lượng tiêu chuẩn quốc gia"
   },
   {
@@ -701,8 +701,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "II",
     category: "Nội dung thành phần 05",
     quantity: 48,
-    hd_nstw_dtpt: 470, hd_nstw_sn: 160, hd_nsdp: 310, hd_longGhep: 110, hd_tinDung: 230, hd_doanhNghiep: 110, hd_danGop: 55,
-    kh_nstw_dtpt: 490, kh_nstw_sn: 130, kh_nsdp: 270, kh_longGhep: 90, kh_tinDung: 260, kh_doanhNghiep: 95, kh_danGop: 40,
+    hd_total: 1445, hd_vdt_total: 940, hd_nstw_dtpt: 470, hd_nstw_sn: 160, hd_nsdp: 310, hd_longGhep: 110, hd_tinDung: 230, hd_doanhNghiep: 110, hd_danGop: 55,
+    kh_total: 1375, kh_vdt_total: 890, kh_nstw_dtpt: 490, kh_nstw_sn: 130, kh_nsdp: 270, kh_longGhep: 90, kh_tinDung: 260, kh_doanhNghiep: 95, kh_danGop: 40,
     note: "Vận hành chuyển giao kỹ năng số vùng sâu vùng xa"
   },
   {
@@ -711,8 +711,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "III",
     category: "Nội dung khác (nếu có)",
     quantity: 0,
-    hd_nstw_dtpt: 0, hd_nstw_sn: 0, hd_nsdp: 0, hd_longGhep: 0, hd_tinDung: 0, hd_doanhNghiep: 0, hd_danGop: 0,
-    kh_nstw_dtpt: 0, kh_nstw_sn: 0, kh_nsdp: 0, kh_longGhep: 0, kh_tinDung: 0, kh_doanhNghiep: 0, kh_danGop: 0,
+    hd_total: 0, hd_vdt_total: 0, hd_nstw_dtpt: 0, hd_nstw_sn: 0, hd_nsdp: 0, hd_longGhep: 0, hd_tinDung: 0, hd_doanhNghiep: 0, hd_danGop: 0,
+    kh_total: 0, kh_vdt_total: 0, kh_nstw_dtpt: 0, kh_nstw_sn: 0, kh_nsdp: 0, kh_longGhep: 0, kh_tinDung: 0, kh_doanhNghiep: 0, kh_danGop: 0,
     note: ""
   },
   {
@@ -721,8 +721,8 @@ export const INITIAL_RESOURCE_ROWS: ResourceInvestRow[] = [
     sectionCode: "III",
     category: "Nội dung phát sinh cục bộ",
     quantity: 15,
-    hd_nstw_dtpt: 200, hd_nstw_sn: 80, hd_nsdp: 120, hd_longGhep: 40, hd_tinDung: 150, hd_doanhNghiep: 50, hd_danGop: 20,
-    kh_nstw_dtpt: 250, kh_nstw_sn: 50, kh_nsdp: 100, kh_longGhep: 30, kh_tinDung: 200, kh_doanhNghiep: 50, kh_danGop: 10,
+    hd_total: 660, hd_vdt_total: 400, hd_nstw_dtpt: 200, hd_nstw_sn: 80, hd_nsdp: 120, hd_longGhep: 40, hd_tinDung: 150, hd_doanhNghiep: 50, hd_danGop: 20,
+    kh_total: 690, kh_vdt_total: 400, kh_nstw_dtpt: 250, kh_nstw_sn: 50, kh_nsdp: 100, kh_longGhep: 30, kh_tinDung: 200, kh_doanhNghiep: 50, kh_danGop: 10,
     note: "Hỗ trợ khẩn cấp phục hồi sau thiên tai bão lũ"
   }
 ];
@@ -1041,10 +1041,24 @@ export const FORM_METAS = [
 ];
 
 import { ReportPeriod, FormReport } from './types';
+import { INITIAL_FORM_TEMPLATES } from './components/FormDesignerTab';
 
 export function createDefaultFormsForPeriod(periodId: string, customCategories?: string[]): FormReport[] {
+  // Load latest templates from localStorage if available, else use defaults
+  let templates = INITIAL_FORM_TEMPLATES;
+  try {
+    const savedTemplates = localStorage.getItem('NTM_FormTemplates');
+    if (savedTemplates) {
+      const parsed = JSON.parse(savedTemplates);
+      if (Array.isArray(parsed) && parsed.length > 0) templates = parsed;
+    }
+  } catch (e) {}
+
   // Use INITIAL_CRITERIA_ROWS or INITIAL_CRITERIA_ROWS_08 as base data
   return FORM_METAS.map((meta, index) => {
+    // Find matching template for this form
+    const matchedTemplate = templates.find(t => t.code === meta.code);
+
     // Generate slight variances in criteria values for high-fidelity realism
     let customizedData: any[] = [];
     if (meta.code === 'Biểu 06') {
@@ -1055,10 +1069,40 @@ export function createDefaultFormsForPeriod(periodId: string, customCategories?:
       customizedData = JSON.parse(JSON.stringify(INITIAL_CRITERIA_ROWS_08));
     } else if (meta.code === 'Biểu 09' || meta.code === 'Biểu 12') {
       customizedData = JSON.parse(JSON.stringify(INITIAL_RESOURCE_ROWS));
+    } else if (matchedTemplate) {
+      // Use template rows as default data structure
+      customizedData = JSON.parse(JSON.stringify(matchedTemplate.rows)).map((row: any) => {
+        (matchedTemplate.columns || []).forEach((col: any) => {
+          if (col.id !== 'tt' && col.id !== 'category' && col.id !== 'unit' && col.id !== 'note') {
+            if (row[col.id] === undefined) {
+              if (col.type === 'number') {
+                row[col.id] = Math.floor(Math.random() * 20) + 1;
+              } else if (col.type === 'boolean') {
+                row[col.id] = Math.random() > 0.3;
+              } else if (col.type === 'text') {
+                if (col.id === 'type') {
+                  row[col.id] = row.category;
+                } else if (col.id === 'codeAndDate') {
+                  row[col.id] = `${Math.floor(Math.random() * 150) + 10}/2024/NQ-HĐND ngày 20/05/2024`;
+                } else if (col.id === 'summary') {
+                  row[col.id] = `Chính sách khuyến khích phát triển ${row.category ? row.category.toLowerCase() : 'kinh tế'}`;
+                } else if (col.id === 'mainGoal') {
+                  row[col.id] = `Đạt mục tiêu đề ra cho giai đoạn 2026-2030`;
+                } else if (col.id === 'mainContent') {
+                  row[col.id] = `Quy định mức chi tiết hỗ trợ tài chính từ ngân sách địa phương`;
+                } else {
+                  row[col.id] = '';
+                }
+              }
+            }
+          }
+        });
+        return row;
+      });
     } else {
       customizedData = INITIAL_CRITERIA_ROWS.map((row) => {
         const modifier = (index + row.id) % 3;
-        return {
+        const rowData: any = {
           ...row,
           group1: {
             prevYear: Math.max(2, row.group1.prevYear - modifier),
@@ -1076,6 +1120,37 @@ export function createDefaultFormsForPeriod(periodId: string, customCategories?:
             planS2: Math.max(2, row.group3.planS2 - modifier)
           }
         };
+
+        // Seed realistic text data for general tables if needed
+        const defTmpl = INITIAL_FORM_TEMPLATES.find(t => t.code === meta.code);
+        const cols = defTmpl?.columns || [];
+        cols.forEach((col: any) => {
+          if (col.id !== 'tt' && col.id !== 'category' && col.id !== 'unit' && col.id !== 'note') {
+            if (rowData[col.id] === undefined) {
+              if (col.type === 'number') {
+                rowData[col.id] = Math.floor(Math.random() * 20) + 1;
+              } else if (col.type === 'boolean') {
+                rowData[col.id] = Math.random() > 0.3;
+              } else if (col.type === 'text') {
+                if (col.id === 'type') {
+                  rowData[col.id] = row.category;
+                } else if (col.id === 'codeAndDate') {
+                  rowData[col.id] = `${Math.floor(Math.random() * 150) + 10}/2024/QĐ-UBND ngày 12/04/2024`;
+                } else if (col.id === 'summary') {
+                  rowData[col.id] = `Đề án thúc đẩy và hoàn thiện chỉ tiêu về ${row.category.toLowerCase()}`;
+                } else if (col.id === 'mainGoal') {
+                  rowData[col.id] = `Nâng cao năng lực và hiện đại hóa cơ sở hạ tầng`;
+                } else if (col.id === 'mainContent') {
+                  rowData[col.id] = `Hỗ trợ kinh phí ngân sách nhà nước kết hợp nguồn vốn xã hội hóa`;
+                } else {
+                  rowData[col.id] = `Nội dung mẫu cho ${col.label.toLowerCase()}`;
+                }
+              }
+            }
+          }
+        });
+
+        return rowData;
       });
     }
 
@@ -1137,6 +1212,7 @@ export function createDefaultFormsForPeriod(periodId: string, customCategories?:
       editor: (status !== 'DRAFT' && status !== 'REJECTED') ? 'Nguyễn Văn An' : '',
       proofFiles,
       data: customizedData,
+      columns: matchedTemplate?.columns, // <-- Attach columns from template
       appraisal,
       supervision
     };

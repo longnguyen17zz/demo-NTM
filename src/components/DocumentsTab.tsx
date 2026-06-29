@@ -24,6 +24,7 @@ interface DocumentsTabProps {
   activeDocCode: string | null;
   onDocCodeSelect: (code: string | null) => void;
   userSession: UserSession;
+  onNavigateToCriterion?: (critCode: string) => void;
 }
 
 const STATIC_DOCUMENTS: RegulatoryDocument[] = [
@@ -42,7 +43,7 @@ Bộ Giao thông Vận tải ban hành Hướng dẫn thực hiện chỉ tiêu 
 2. Đường trục thôn, bản và đường liên thôn, bản ít nhất được cứng hóa bằng bê tông hoặc cấp phối đá dăm. Tỷ lệ cứng hóa tối thiểu đạt chuẩn 75% cho vùng đồng bằng và 60% cho vùng khó khăn.
 3. Đường ngõ, xóm sạch và không lầy lội vào mùa mưa. Tỷ lệ cứng hóa tối thiểu đạt chuẩn 50% cho vùng đồng bằng và 30% cho vùng khó khăn.
 4. Đường trục chính nội đồng được cứng hóa, xe cơ giới đi lại thuận tiện để phục vụ sản xuất và vận chuyển nông sản. Tỷ lệ cứng hóa đạt tối thiểu 40%.`,
-    relatedCriteria: ['Tiêu chí 2']
+    relatedCriteria: ['TC02']
   },
   {
     id: 'doc-2',
@@ -58,7 +59,7 @@ Bộ Nông nghiệp và Phát triển Nông thôn hướng dẫn quy trình lậ
 1. Quy hoạch chung xây dựng xã nông thôn mới phải đồng bộ hóa với định hướng phát triển kinh tế vùng huyện, hạ tầng kỹ thuật và thích ứng cao với biến đổi khí hậu toàn cầu.
 2. Các điểm dân cư mới và khu trung tâm hành chính cấp xã phải bố trí nằm ngoài vùng có nguy cơ lũ quét, sạt lở đất hoặc ngập lụt định kỳ.
 3. Bản đồ quy hoạch sử dụng đất sản xuất nông nghiệp cần chỉ rõ phân khu chuyên canh sản xuất hàng hóa lớn có liên kết chuỗi giá trị và thích ứng hạn mặn.`,
-    relatedCriteria: ['Tiêu chí 1']
+    relatedCriteria: ['TC01']
   },
   {
     id: 'doc-3',
@@ -74,7 +75,7 @@ Sở Nông nghiệp và Phát triển Nông thôn hướng dẫn chi tiết:
 1. Hệ thống thủy lợi của xã phải đáp ứng tối thiểu 80% diện tích đất sản xuất nông nghiệp được tưới tiêu chủ động.
 2. Kênh mương nội đồng do xã quản lý phải được kiên cố hóa bằng bê tông đúc sẵn hoặc gia cố đá hộc đạt tỷ lệ trên 65% tổng chiều dài.
 3. Đập, hồ chứa nước nhỏ trên địa bàn phải có phương án ứng phó thiên tai, lũ lụt khẩn cấp, có nhân sự túc trực 24/7 trong mùa mưa bão.`,
-    relatedCriteria: ['Tiêu chí 3']
+    relatedCriteria: ['TC03']
   },
   {
     id: 'doc-4',
@@ -89,7 +90,7 @@ Sở Nông nghiệp và Phát triển Nông thôn hướng dẫn chi tiết:
 1. Hệ thống điện nông thôn phải đảm bảo các thông số kỹ thuật theo Tiêu chuẩn Quốc gia TCVN về hành lang an toàn lưới điện cao, trung và hạ thế.
 2. Tỷ lệ hộ gia đình sử dụng điện thường xuyên, an toàn từ nguồn điện lưới quốc gia đạt tối thiểu 98% trở lên đối với các xã vùng đồng bằng.
 3. Trạm biến áp cấp điện phải có công suất dự phòng tối thiểu 15% đảm bảo nhu cầu sản xuất nông nghiệp và sinh hoạt tăng cao trong dịp lễ tết.`,
-    relatedCriteria: ['Tiêu chí 4']
+    relatedCriteria: ['TC04']
   },
   {
     id: 'doc-5',
@@ -104,7 +105,7 @@ Sở Nông nghiệp và Phát triển Nông thôn hướng dẫn chi tiết:
 1. Tỷ lệ trường học các cấp có cơ sở vật chất và thiết bị dạy học đạt chuẩn tối thiểu là 70%.
 2. Trường mầm non phải có khu vui chơi ngoài trời trang bị thảm cỏ và đồ chơi an toàn, phòng ngủ tách biệt với phòng sinh hoạt chung.
 3. Trường tiểu học và THCS phải có tối thiểu 03 phòng học chức năng (Tin học, Ngoại ngữ, Thí nghiệm vật lý - hóa học) đạt trang bị tiêu chuẩn.`,
-    relatedCriteria: ['Tiêu chí 5']
+    relatedCriteria: ['TC05']
   },
   {
     id: 'doc-6',
@@ -119,7 +120,7 @@ Sở Nông nghiệp và Phát triển Nông thôn hướng dẫn chi tiết:
 1. Nhà văn hóa xã phải có quy mô tối thiểu 250 chỗ ngồi, khu thể thao xã phải có diện tích tối thiểu 2000m² bao gồm sân bóng đá mini hoặc sân bóng chuyền.
 2. Các thôn, bản phải có nhà văn hóa hoặc sân thể thao đơn giản phục vụ sinh hoạt chung, trang bị tối thiểu tủ sách 300 cuốn và bộ tăng âm loa phát thanh.
 3. Xã nông thôn mới phải có câu lạc bộ văn nghệ dân gian hoặc dân ca truyền thống hoạt động thường xuyên nhằm giữ gìn bản sắc địa phương.`,
-    relatedCriteria: ['Tiêu chí 6']
+    relatedCriteria: ['TC06']
   },
   {
     id: 'doc-7',
@@ -134,7 +135,7 @@ Sở Nông nghiệp và Phát triển Nông thôn hướng dẫn chi tiết:
 1. Chợ nông thôn phải có sơ đồ bố trí gian hàng khoa học, phân chia rõ khu vực thực phẩm tươi sống, hàng khô và khu ăn uống.
 2. Phải có hệ thống thu gom và xử lý rác thải tập trung, nhà vệ sinh công cộng tự hoại đạt yêu cầu môi trường và nguồn nước sạch xét nghiệm định kỳ.
 3. Ban quản lý chợ phải có nội quy hoạt động công khai, trang bị phương tiện phòng cháy chữa cháy cơ bản.`,
-    relatedCriteria: ['Tiêu chí 7']
+    relatedCriteria: ['TC07']
   },
   {
     id: 'doc-8',
@@ -149,7 +150,7 @@ Sở Nông nghiệp và Phát triển Nông thôn hướng dẫn chi tiết:
 1. Xã phải có điểm cung cấp dịch vụ bưu chính viễn thông đạt chuẩn, phổ cập kết nối internet cáp quang đến các nhà văn hóa thôn.
 2. Hệ thống đài truyền thanh xã phải sử dụng công nghệ số IP không dây thông minh, truyền tải tin tức phòng chống thiên tai và chính sách kịp thời.
 3. Bộ phận một cửa cấp xã phải có máy tính kết nối mạng phục vụ nhân dân truy cập nộp hồ sơ dịch vụ công trực tuyến.`,
-    relatedCriteria: ['Tiêu chí 8']
+    relatedCriteria: ['TC08']
   },
   {
     id: 'doc-9',
@@ -164,7 +165,7 @@ Sở Nông nghiệp và Phát triển Nông thôn hướng dẫn chi tiết:
 1. Xã nông thôn mới hoàn toàn không còn nhà dột nát, nhà tạm bợ dột mục không an toàn trước thiên tai bão lũ.
 2. Tỷ lệ nhà ở kiên cố hoặc bán kiên cố đạt tối thiểu 90% trở lên. Kết cấu nhà ở phải đảm bảo 3 cứng (cột cứng, mái cứng, tường cứng).
 3. Diện tích nhà ở bình quân đạt tối thiểu 14m²/người, niên hạn sử dụng công trình chính phải đạt từ 20 năm trở lên.`,
-    relatedCriteria: ['Tiêu chí 9']
+    relatedCriteria: ['TC09']
   },
   {
     id: 'doc-10',
@@ -179,27 +180,62 @@ Sở Nông nghiệp và Phát triển Nông thôn hướng dẫn chi tiết:
 1. Chỉ số thu nhập bình quân đầu người cấp xã được xác định thông qua khảo sát mẫu đại diện hộ gia đình theo quý hoặc năm.
 2. Công thức tính toán tổng thu nhập bao gồm: thu nhập từ trồng trọt chăn nuôi nông nghiệp (đã trừ chi phí đầu vào), tiền lương tiền công lao động tự do, và các nguồn chuyển giao khác.
 3. Ủy ban nhân dân xã phối hợp với chi cục thống kê huyện tổ chức điều tra công khai, minh bạch dữ liệu thực tế tại địa phương.`,
-    relatedCriteria: ['Tiêu chí 10']
+    relatedCriteria: ['TC10']
   }
 ];
 
 export default function DocumentsTab({
   activeDocCode,
   onDocCodeSelect,
-  userSession
+  userSession,
+  onNavigateToCriterion
 }: DocumentsTabProps) {
   // Load documents list from local storage or fallback to STATIC_DOCUMENTS
   const [documentsList, setDocumentsList] = useState<RegulatoryDocument[]>(() => {
     const saved = localStorage.getItem('NTM_RegulatoryDocuments');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved) as RegulatoryDocument[];
+        // Clean up / Auto-repair: Map "Tiêu chí X" to "TC0X" or "TCX"
+        let updated = false;
+        const cleaned = parsed.map(doc => {
+          const newRelated = (doc.relatedCriteria || []).map(item => {
+            if (item.startsWith('Tiêu chí ')) {
+              updated = true;
+              const num = parseInt(item.replace('Tiêu chí ', ''), 10);
+              return `TC${num < 10 ? '0' + num : num}`;
+            }
+            return item;
+          });
+          if (updated) {
+            return { ...doc, relatedCriteria: newRelated };
+          }
+          return doc;
+        });
+        if (updated) {
+          localStorage.setItem('NTM_RegulatoryDocuments', JSON.stringify(cleaned));
+          return cleaned;
+        }
+        return parsed;
       } catch (e) {
         // ignore
       }
     }
     return STATIC_DOCUMENTS;
   });
+
+  // Load available criteria from localStorage
+  const criteriaList = useMemo(() => {
+    const saved = localStorage.getItem('NTM_Criteria');
+    if (saved) {
+      try {
+        return JSON.parse(saved) as any[];
+      } catch (e) {
+        // ignore
+      }
+    }
+    return [];
+  }, []);
 
   // Persist to local storage
   useEffect(() => {
@@ -920,10 +956,24 @@ Văn phòng Thường trực ban hành Hướng dẫn chuyên đề số ${activ
                     <span className="text-slate-800 block font-black">{activeDoc.signer}</span>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[10px] text-slate-400 block uppercase tracking-wider">Các chỉ tiêu liên kết</span>
-                    <span className="text-slate-800 block font-black">
-                      {activeDoc.relatedCriteria.join(', ') || 'Chỉ số rà soát tổng hợp'}
-                    </span>
+                    <span className="text-[10px] text-slate-400 block uppercase tracking-wider text-left">Các chỉ tiêu liên kết</span>
+                    <div className="flex flex-wrap gap-1.5 mt-1 justify-start">
+                      {activeDoc.relatedCriteria && activeDoc.relatedCriteria.length > 0 ? (
+                        activeDoc.relatedCriteria.map((critCode) => (
+                          <button
+                            key={critCode}
+                            type="button"
+                            onClick={() => onNavigateToCriterion?.(critCode)}
+                            className="text-[10px] font-black text-[#014285] bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded border border-blue-200 uppercase tracking-wide cursor-pointer transition-colors shadow-sm"
+                            title="Click để chuyển sang xem tiêu chí"
+                          >
+                            {critCode}
+                          </button>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-450 italic">Chỉ số rà soát tổng hợp</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1161,19 +1211,20 @@ Văn phòng Thường trực ban hành Hướng dẫn chuyên đề số ${activ
                 <div className="flex flex-col gap-1 text-left">
                   <label className="text-[10px] text-slate-400 uppercase">Liên kết với Tiêu chí</label>
                   <div className="grid grid-cols-4 gap-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl max-h-24 overflow-y-auto">
-                    {Array.from({ length: 19 }, (_, i) => `Tiêu chí ${i + 1}`).map(critName => {
-                      const isLinked = formCriteria.includes(critName);
+                    {criteriaList.map((crit) => {
+                      const isLinked = formCriteria.includes(crit.code);
                       return (
                         <button
-                          key={critName}
+                          key={crit.id}
                           type="button"
-                          onClick={() => toggleCriterionRelation(critName)}
+                          onClick={() => toggleCriterionRelation(crit.code)}
                           className={`py-1.5 px-2 rounded-lg text-[9px] font-black cursor-pointer border transition-all ${isLinked
                             ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
                             : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
                             }`}
+                          title={crit.title}
                         >
-                          {critName}
+                          {crit.code}
                         </button>
                       );
                     })}

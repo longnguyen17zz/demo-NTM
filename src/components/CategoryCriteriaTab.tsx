@@ -310,7 +310,7 @@ export default function CategoryCriteriaTab({
                   </span>
                 </div>
 
-                {userSession.role === 'EDITOR' && (
+                {userSession.role === 'SUPERVISOR' && (
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => handleOpenEdit(index, catObj.name)}

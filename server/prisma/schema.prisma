@@ -1,0 +1,356 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Unit {
+  id              Int              @id @default(autoincrement())
+  code            String           @unique
+  name            String
+  level           String           // 'PROVINCE', 'DISTRICT', 'COMMUNE', 'MINISTRY'
+  parentCode      String?
+  communeGroup    String?          // 'I', 'II', 'III'
+  ntmStatus       String           @default("NONE") // 'NONE', 'NTM_STANDARD', 'NTM_MODERN', 'PROVINCE_COMPLETED'
+  ntmApprovedAt   DateTime?
+  
+  // Relations
+  users           User[]
+  submissions     FormSubmission[]
+  ntmAppraisals   NtmAppraisal[]
+  qd25Infos       ProgramGeneralInfo[]
+  indicatorValues NtmIndicatorValue[]
+}
+
+model User {
+  id              String           @id @default(uuid())
+  username        String           @unique
+  passwordHash    String
+  fullName        String
+  role            String           // 'EDITOR', 'APPRAISER', 'SUPERVISOR'
+  department      String?
+  unitCode        String?
+  unit            Unit?            @relation(fields: [unitCode], references: [code])
+  permissions     String[]
+  createdAt       DateTime         @default(now())
+  
+  // Relations
+  submissions     FormSubmission[]
+  appraisals      AppraisalLog[]
+  supervisions    SupervisionLog[]
+  ntmDecisions    NtmAppraisal[]
+  syncLogs        SyncLog[]
+}
+
+model Period {
+  id              String           @id // e.g. '2024-6tdu', '2024-y'
+  name            String
+  year            Int
+  term            String           // '6_MONTH', 'FULL_YEAR'
+  deadline        DateTime
+  status          String           @default("ACTIVE") // 'ACTIVE', 'LOCKED'
+  createdAt       DateTime         @default(now())
+  
+  // Relations
+  submissions     FormSubmission[]
+  ntmAppraisals   NtmAppraisal[]
+  qd25Infos       ProgramGeneralInfo[]
+  indicatorValues NtmIndicatorValue[]
+}
+
+model FormTemplate {
+  code            String           @id // e.g. 'Biểu 10', 'Biểu 11'
+  title           String
+  description     String?
+  columns         Json             // Columns structure definitions
+  rowsConfig      Json             // Default indicator rows configurations
+  updatedAt       DateTime         @updatedAt
+  
+  // Relations
+  submissions     FormSubmission[]
+}
+
+model FormSubmission {
+  id              String           @id @default(uuid())
+  periodId        String
+  period          Period           @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  formCode        String
+  formTemplate    FormTemplate     @relation(fields: [formCode], references: [code])
+  unitCode        String
+  unit            Unit             @relation(fields: [unitCode], references: [code])
+  status          String           @default("DRAFT") // 'DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'SUPERVISED'
+  data            Json             // JSONB data rows
+  editorId        String?
+  editor          User?            @relation(fields: [editorId], references: [id])
+  updatedAt       DateTime         @updatedAt
+  
+  // Relations
+  appraisalLogs   AppraisalLog[]
+  supervisionLogs SupervisionLog[]
+  proofFiles      ProofFile[]
+
+  @@unique([periodId, formCode, unitCode])
+}
+
+model AppraisalLog {
+  id              String           @id @default(uuid())
+  submissionId    String
+  submission      FormSubmission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  appraiserId     String
+  appraiser       User             @relation(fields: [appraiserId], references: [id])
+  decision        String           // 'APPROVED', 'REJECTED'
+  comment         String?
+  updatedAt       DateTime         @default(now())
+}
+
+model SupervisionLog {
+  id              String           @id @default(uuid())
+  submissionId    String
+  submission      FormSubmission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  supervisorId    String
+  supervisor      User             @relation(fields: [supervisorId], references: [id])
+  complianceLevel String           // 'Xuất sắc', 'Đạt yêu cầu', 'Cần cải thiện'
+  comment         String?
+  updatedAt       DateTime         @default(now())
+}
+
+model NtmAppraisal {
+  id                        String    @id @default(uuid())
+  unitCode                  String
+  unit                      Unit      @relation(fields: [unitCode], references: [code], onDelete: Cascade)
+  periodId                  String
+  period                    Period    @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  appraiserId               String
+  appraiser                 User      @relation(fields: [appraiserId], references: [id])
+  targetType                String    // 'COMMUNE_NTM_STANDARD', 'COMMUNE_NTM_MODERN', 'PROVINCE_COMPLETED'
+  status                    String    // 'PENDING', 'APPROVED', 'REJECTED'
+  decisionNumber            String?
+  decisionDate              DateTime?
+  approverName              String?
+  councilVoteRatio          Decimal?  @db.Decimal(5, 2)
+  citizenSatisfactionRatio  Decimal?  @db.Decimal(5, 2)
+  councilMeetingDate        DateTime?
+  comment                   String?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+}
+
+model ProofFile {
+  id              String           @id @default(uuid())
+  submissionId    String
+  submission      FormSubmission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  name            String
+  size            Int
+  path            String
+  uploadedAt      DateTime         @default(now())
+}
+
+// QĐ 25 Data Integration Tables
+
+model ProgramGeneralInfo {
+  id              Int              @id @default(autoincrement())
+  unitCode        String
+  unit            Unit             @relation(fields: [unitCode], references: [code])
+  maDonVi         Int
+  tenDonVi        String
+  maCtmtqg        Int
+  tenCtmtqg       String
+  maGiaiDoan      Int
+  tenGiaiDoan     String
+  namKeHoach      Int
+  periodId        String?
+  period          Period?          @relation(fields: [periodId], references: [id])
+  createdAt       DateTime         @default(now())
+  
+  // Relations
+  objectives      ProgramObjective[]
+  careerCapitals  ProgramCareerCapital[]
+  disbursements   FinancialDisbursement[]
+  mtAllocations   MediumTermAllocation[]
+  mtDetails       MediumTermDetail[]
+  annualAllocs    AnnualAllocation[]
+  annualDetails   AnnualDetail[]
+  budgetEstimates StateBudgetEstimate[]
+}
+
+model ProgramObjective {
+  id              Int              @id @default(autoincrement())
+  generalInfoId   Int
+  generalInfo     ProgramGeneralInfo @relation(fields: [generalInfoId], references: [id], onDelete: Cascade)
+  maMucTieu       Int
+  tenMucTieu      String
+  donViDoLuong    String
+  kyBaoCao        String
+  thucHienMucTieu String
+  thoiDiemBaoCao  String
+  uocCaNam        String
+}
+
+model ProgramDocument {
+  id              Int              @id @default(autoincrement())
+  maLoaiVanBan    Int
+  tenLoaiVanBan   String
+  tenVanBan       String
+  coQuanBanhHanh  String
+  soKyHieu        String
+}
+
+model ProgramCareerCapital {
+  id              Int              @id @default(autoincrement())
+  generalInfoId   Int
+  generalInfo     ProgramGeneralInfo @relation(fields: [generalInfoId], references: [id], onDelete: Cascade)
+  maDuAnTP        Int
+  tenDuAnTP       String
+  maTieuDuAn      Int
+  tenTieuDuAn     String
+  vonSuNghiep     Decimal          @db.Decimal(18, 6)
+}
+
+model FinancialDisbursement {
+  id              Int              @id @default(autoincrement())
+  generalInfoId   Int
+  generalInfo     ProgramGeneralInfo @relation(fields: [generalInfoId], references: [id], onDelete: Cascade)
+  kyBaoCao        String
+  giaiNganVTN     Decimal          @db.Decimal(18, 6)
+  giaiNganVNN     Decimal          @db.Decimal(18, 6)
+  giaiNganCTX     Decimal          @db.Decimal(18, 6)
+  maNguonVon      Int
+  tenNguonVon     String
+}
+
+model MediumTermAllocation {
+  id              Int              @id @default(autoincrement())
+  generalInfoId   Int
+  generalInfo     ProgramGeneralInfo @relation(fields: [generalInfoId], references: [id], onDelete: Cascade)
+  vonPhanBo       Decimal          @db.Decimal(18, 6)
+}
+
+model MediumTermDetail {
+  id              Int              @id @default(autoincrement())
+  generalInfoId   Int
+  generalInfo     ProgramGeneralInfo @relation(fields: [generalInfoId], references: [id], onDelete: Cascade)
+  donViId         Int
+  maLoaiDuAn      Int
+  tenLoaiDuAn     String
+  tenDuAn         String
+  diaDiemXayDung  String
+  nangLucThietKe  String
+  namBatDau       Int
+  namKetThuc      Int
+  soQuyetDinh     String
+  tmdt            Decimal          @db.Decimal(18, 6)
+  tmdt_nstw       Decimal          @db.Decimal(18, 6)
+  vonGiao         Decimal          @db.Decimal(18, 6)
+  vonGiao_nstw    Decimal          @db.Decimal(18, 6)
+}
+
+model AnnualAllocation {
+  id              Int              @id @default(autoincrement())
+  generalInfoId   Int
+  generalInfo     ProgramGeneralInfo @relation(fields: [generalInfoId], references: [id], onDelete: Cascade)
+  vonPhanBo       Decimal          @db.Decimal(18, 6)
+}
+
+model AnnualDetail {
+  id                             Int              @id @default(autoincrement())
+  generalInfoId                  Int
+  generalInfo                    ProgramGeneralInfo @relation(fields: [generalInfoId], references: [id], onDelete: Cascade)
+  maDuAn                         Int
+  luyKeDenNamTruoc               Decimal?         @db.Decimal(18, 6) @default(0)
+  luyKeDenNamTruoc_nstw          Decimal?         @db.Decimal(18, 6) @default(0)
+  luyKeDenNamTruoc_nsdp          Decimal?         @db.Decimal(18, 6) @default(0)
+  luyKeGiaiNganDenNamTruoc       Decimal?         @db.Decimal(18, 6) @default(0)
+  luyKeGiaiNganDenNamTruoc_nstw  Decimal?         @db.Decimal(18, 6) @default(0)
+  luyKeGiaiNganDenNamTruoc_nsdp  Decimal?         @db.Decimal(18, 6) @default(0)
+  vonKeoDai                      Decimal?         @db.Decimal(18, 6) @default(0)
+  vonKeoDai_nstw                 Decimal?         @db.Decimal(18, 6) @default(0)
+  vonKeoDai_nsdp                 Decimal?         @db.Decimal(18, 6) @default(0)
+  giaiNganKeoDai                 Decimal?         @db.Decimal(18, 6) @default(0)
+  giaiNganKeoDai_nstw            Decimal?         @db.Decimal(18, 6) @default(0)
+  giaiNganKeoDai_nsdp            Decimal?         @db.Decimal(18, 6) @default(0)
+  vonGiaoNamHienTai              Decimal?         @db.Decimal(18, 6) @default(0)
+  vonGiaoNamHienTai_nstw         Decimal?         @db.Decimal(18, 6) @default(0)
+  vonGiaoNamHienTai_nsdp         Decimal?         @db.Decimal(18, 6) @default(0)
+  giaiNganNamHienTai             Decimal?         @db.Decimal(18, 6) @default(0)
+  giaiNganNamHienTai_nstw        Decimal?         @db.Decimal(18, 6) @default(0)
+  giaiNganNamHienTai_nsdp        Decimal?         @db.Decimal(18, 6) @default(0)
+  ghiChu                         String?
+}
+
+model StateBudgetEstimate {
+  id              Int              @id @default(autoincrement())
+  generalInfoId   Int
+  generalInfo     ProgramGeneralInfo @relation(fields: [generalInfoId], references: [id], onDelete: Cascade)
+  vonSuNghiep     Decimal          @db.Decimal(18, 6)
+  chiThuongXuyen  Decimal          @db.Decimal(18, 6)
+}
+
+// Thông tư 23 Indicators dict & values
+model NtmIndicatorDictionary {
+  id                       Int                 @id @default(autoincrement())
+  code                     String              @unique
+  name                     String
+  section                  String              // 'OBJECTIVES', 'CRITERIA_COMMUNE_1', 'CRITERIA_COMMUNE_2', etc.
+  unit                     String
+  reportFrequency          String              // '6_MONTH', 'ANNUAL'
+  dataSource               String?
+  provincialResponsibility String?
+  centralResponsibility    String?
+  
+  // Relations
+  values                   NtmIndicatorValue[]
+}
+
+model NtmIndicatorValue {
+  id              Int                    @id @default(autoincrement())
+  indicatorId     Int
+  indicator       NtmIndicatorDictionary @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+  unitCode        String
+  unit            Unit                   @relation(fields: [unitCode], references: [code], onDelete: Cascade)
+  periodId        String
+  period          Period                 @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  year            Int
+  targetValue     Decimal?               @db.Decimal(18, 6)
+  actualValue     Decimal?               @db.Decimal(18, 6)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@unique([indicatorId, unitCode, periodId, year])
+}
+
+model SyncLog {
+  id           String   @id @default(uuid())
+  timestamp    DateTime @default(now())
+  systemId     String   // 'mof', 'molisa', 'cema'
+  formCode     String
+  status       String   // 'SUCCESS', 'FAILED'
+  recordsCount Int      @default(0)
+  operatorId   String?
+  operator     User?    @relation(fields: [operatorId], references: [id])
+  message      String?
+}
+
+model CriteriaCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Criterion {
+  id              String   @id @default(uuid())
+  code            String   @unique
+  title           String
+  description     String?
+  indicator       String?
+  weight          String?
+  category        String
+  thresholdType   String   @default("boolean")
+  group1Threshold String   @default("Đạt")
+  group2Threshold String   @default("Đạt")
+  group3Threshold String   @default("Đạt")
+  proofs          String[]
+  createdAt       DateTime @default(now())
+}

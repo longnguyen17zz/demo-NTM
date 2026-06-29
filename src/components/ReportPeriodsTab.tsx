@@ -74,6 +74,9 @@ export default function ReportPeriodsTab({
   const [filterFormStatus, setFilterFormStatus] = useState<string>('ALL');
 
   // Filter and search variables for reporting status table
+  const [viewLevel, setViewLevel] = useState<'PROVINCE' | 'COMMUNE'>(
+    userSession.role === 'SUPERVISOR' ? 'PROVINCE' : 'COMMUNE'
+  );
   const [selectedProvince, setSelectedProvince] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [tablePage, setTablePage] = useState<number>(1);
@@ -248,7 +251,7 @@ export default function ReportPeriodsTab({
   });
 
   const isSupervisor = userSession.role === 'SUPERVISOR';
-  const tableDataList = isSupervisor ? filteredProvinces : filteredCommunes;
+  const tableDataList = viewLevel === 'PROVINCE' ? filteredProvinces : filteredCommunes;
 
   // Pagination indices
   const totalTablePages = Math.ceil(tableDataList.length / itemsPerPageTable) || 1;
@@ -839,13 +842,42 @@ export default function ReportPeriodsTab({
 
               {/* Header layout of the table status block */}
               <div className="p-5 border-b border-slate-110 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-sm font-black text-[#0f2942] tracking-tight uppercase">
-                    {isSupervisor ? "Thống kê trạng thái nộp báo cáo cấp Tỉnh" : "Thống kê trạng thái nộp báo cáo cấp Xã"}
-                  </h3>
-                  <p className="text-xs text-[#64748b] font-medium mt-0.5">
-                    {isSupervisor ? "Chi tiết tình hình thực hiện theo từng Tỉnh gửi lên Bộ." : "Chi tiết tình hình thực hiện theo từng Huyện/Thành phố."}
-                  </p>
+                <div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-4">
+                  <div>
+                    <h3 className="text-sm font-black text-[#0f2942] tracking-tight uppercase">
+                      {viewLevel === 'PROVINCE' ? "Thống kê trạng thái nộp báo cáo cấp Tỉnh" : "Thống kê trạng thái nộp báo cáo cấp Xã"}
+                    </h3>
+                    <p className="text-xs text-[#64748b] font-medium mt-0.5">
+                      {viewLevel === 'PROVINCE' ? "Chi tiết tình hình thực hiện theo từng Tỉnh gửi lên Bộ." : isSupervisor ? "Chi tiết tình hình thực hiện theo từng Xã trên cả nước." : "Chi tiết tình hình thực hiện theo từng Huyện/Thành phố."}
+                    </p>
+                  </div>
+
+                  {isSupervisor && (
+                    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-205 self-start md:self-auto shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => { setViewLevel('PROVINCE'); setSelectedProvince('all'); setTablePage(1); }}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer border-none ${
+                          viewLevel === 'PROVINCE'
+                            ? 'bg-white text-[#014285] shadow-sm font-black'
+                            : 'text-slate-500 hover:text-slate-800 bg-transparent'
+                        }`}
+                      >
+                        Báo cáo cấp Tỉnh
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setViewLevel('COMMUNE'); setSelectedProvince('all'); setTablePage(1); }}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer border-none ${
+                          viewLevel === 'COMMUNE'
+                            ? 'bg-white text-[#014285] shadow-sm font-black'
+                            : 'text-slate-500 hover:text-slate-800 bg-transparent'
+                        }`}
+                      >
+                        Báo cáo cấp Xã
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Geo filter select dropdowns and Excel exports */}
@@ -870,7 +902,7 @@ export default function ReportPeriodsTab({
 
                   {/* Geographics pin Filter dropdown */}
                   <div className="relative">
-                    {isSupervisor ? (
+                    {viewLevel === 'PROVINCE' ? (
                       <select
                         value={selectedProvince}
                         onChange={(e) => {
@@ -900,7 +932,7 @@ export default function ReportPeriodsTab({
                         <option value="Tỉnh Nam">Tỉnh Nam</option>
                       </select>
                     )}
-                    <MapPin className="w-3.8 h-3.8 text-[#64748b] absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <MapPin className="w-3.8 h-3.8 text-[#64748b] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
 
                   {/* Workflow Status filter dropdown */}
@@ -966,7 +998,7 @@ export default function ReportPeriodsTab({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[850px]">
                   <thead>
-                    {isSupervisor ? (
+                    {viewLevel === 'PROVINCE' ? (
                       <tr className="bg-[#f8fafc] text-xs font-black text-[#475569] uppercase border-b border-slate-200 tracking-wider">
                         <th className="py-3 px-6 w-[30%]">Tên Đơn vị (Tỉnh)</th>
                         <th className="py-3 px-4 w-[25%] text-center">Vùng địa lý</th>
@@ -977,7 +1009,7 @@ export default function ReportPeriodsTab({
                     ) : (
                       <tr className="bg-[#f8fafc] text-xs font-black text-[#475569] uppercase border-b border-slate-200 tracking-wider">
                         <th className="py-3 px-6 w-[25%]">Tên Đơn vị (Xã)</th>
-                        <th className="py-3 px-4 w-[17%] text-center">Tỉnh trực thuộc</th>
+                        {isSupervisor && <th className="py-3 px-4 w-[17%] text-center">Tỉnh trực thuộc</th>}
                         <th className="py-3 px-4 w-[18%] text-center">Phân nhóm Xã</th>
                         <th className="py-3 px-4 w-[18%] text-center">Báo cáo đã gửi</th>
                         <th className="py-3 px-4 w-[14%] text-center">Trạng thái báo cáo</th>
@@ -989,7 +1021,7 @@ export default function ReportPeriodsTab({
                   <tbody className="divide-y divide-slate-100 text-[#0f2942]">
                     {paginatedTableData.length === 0 ? (
                       <tr>
-                        <td colSpan={isSupervisor ? 5 : 6} className="py-12 text-center text-slate-400 font-bold italic">
+                        <td colSpan={viewLevel === 'PROVINCE' ? 5 : (isSupervisor ? 6 : 5)} className="py-12 text-center text-slate-400 font-bold italic">
                           Không có đơn vị nào khớp với bộ lọc không gian hoặc trạng thái hiện hành.
                         </td>
                       </tr>
@@ -1014,13 +1046,13 @@ export default function ReportPeriodsTab({
                         } else if (item.status === 'APPROVED') {
                           statusBadge = (
                             <span className="text-xs font-extrabold text-[#10b981] bg-[#ecfdf5] border border-emerald-100 px-2.5 py-1 rounded-full uppercase whitespace-nowrap">
-                              {isSupervisor ? 'Đã phê duyệt' : 'Đã thẩm định'}
+                              {viewLevel === 'PROVINCE' ? 'Đã phê duyệt' : 'Đã thẩm định'}
                             </span>
                           );
                         } else if (item.status === 'SUBMITTED') {
                           statusBadge = (
                             <span className="text-xs font-extrabold text-amber-700 bg-[#fffbeb] border border-amber-100 px-2.5 py-1 rounded-full uppercase whitespace-nowrap">
-                              {isSupervisor ? 'Chờ phê duyệt' : 'Chờ thẩm định'}
+                              {viewLevel === 'PROVINCE' ? 'Chờ phê duyệt' : 'Chờ thẩm định'}
                             </span>
                           );
                         } else if (item.status === 'REVISION') {
@@ -1031,7 +1063,7 @@ export default function ReportPeriodsTab({
                           );
                         }
 
-                        if (isSupervisor) {
+                        if (viewLevel === 'PROVINCE') {
                           // Render Province row
                           const prov = item as ProvinceSubmission;
                           return (
@@ -1130,11 +1162,13 @@ export default function ReportPeriodsTab({
                                 </div>
                               </td>
 
-                              <td className="py-4.5 px-4 text-center">
-                                <span className="text-xs font-semibold text-slate-600">
-                                  {commune.province}
-                                </span>
-                              </td>
+                              {isSupervisor && (
+                                <td className="py-4.5 px-4 text-center">
+                                  <span className="text-xs font-semibold text-slate-600">
+                                    {commune.province}
+                                  </span>
+                                </td>
+                              )}
 
                               <td className="py-4.5 px-4 text-center">
                                 {isProvince ? (
